@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Elexys.io — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root[data-theme="dark"]{
+  --bg:#020b18;--bg2:#040f1f;--bg3:#061525;
+  --panel:rgba(0,200,255,0.04);--card:rgba(4,20,45,0.92);
+  --border:rgba(0,200,255,0.15);--border2:rgba(0,200,255,0.08);
+  --cyan:#00c8ff;--cyan2:#00ffe7;--green:#00ff99;--orange:#ff9500;
+  --pink:#ff2d78;--purple:#a855f7;--yellow:#ffe000;--red:#ff3b3b;
+  --text:#cce8f4;--text2:#5a8aaa;--text3:#2a5070;
+  --sidebar:rgba(2,8,22,0.98);--topbar:rgba(2,8,22,0.96);
+  --row-hover:rgba(0,200,255,0.05);--badge-bg:rgba(0,200,255,0.1);
+}
+:root[data-theme="light"]{
+  --bg:#eef4fb;--bg2:#e0ecf7;--bg3:#d2e5f4;
+  --panel:rgba(0,100,200,0.05);--card:rgba(255,255,255,0.97);
+  --border:rgba(0,120,200,0.2);--border2:rgba(0,120,200,0.1);
+  --cyan:#006fcc;--cyan2:#005baa;--green:#009966;--orange:#cc7700;
+  --pink:#cc1155;--purple:#7c3aed;--yellow:#aa9000;--red:#cc2222;
+  --text:#0a2540;--text2:#4a6680;--text3:#aac8e0;
+  --sidebar:rgba(248,252,255,0.98);--topbar:rgba(238,244,251,0.97);
+  --row-hover:rgba(0,100,200,0.04);--badge-bg:rgba(0,100,200,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;transition:background .3s,color .3s,border-color .3s;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden;}
+
+[data-theme="dark"] .grid-bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,200,255,0.025) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,200,255,0.025) 1px,transparent 1px);
+  background-size:50px 50px;
+}
+[data-theme="light"] .grid-bg{display:none;}
+
+/* ============ SIDEBAR ============ */
+.sidebar{
+  width:250px;min-height:100vh;position:fixed;left:0;top:0;bottom:0;z-index:200;
+  background:var(--sidebar);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+}
+.sidebar-logo{
+  padding:22px 18px;border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;gap:12px;
+}
+.s-logo-hex{
+  width:44px;height:44px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(255,45,120,0.2),rgba(168,85,247,0.15));
+  border:1px solid var(--pink);display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 18px rgba(255,45,120,0.2);
+}
+.s-logo-hex svg{width:24px;height:24px;}
+.s-brand{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:900;color:var(--cyan);letter-spacing:2px;}
+.s-brand-sub{font-size:9px;color:var(--pink);letter-spacing:3px;font-family:'Share Tech Mono',monospace;margin-top:1px;}
+
+.nav-group{padding:16px 10px 6px;}
+.nav-group-label{font-size:9px;color:var(--text3);letter-spacing:3px;text-transform:uppercase;padding:0 8px;margin-bottom:6px;font-family:'Share Tech Mono',monospace;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
+  cursor:pointer;font-size:14px;font-weight:600;letter-spacing:.5px;
+  color:var(--text2);transition:.2s;border:1px solid transparent;margin-bottom:2px;
+}
+.nav-item:hover{background:var(--panel);color:var(--text);border-color:var(--border2);}
+.nav-item.active{background:rgba(255,45,120,0.08);color:var(--pink);border-color:rgba(255,45,120,0.2);}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+.nav-badge{margin-left:auto;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;font-family:'Share Tech Mono',monospace;}
+.nb-red{background:rgba(255,59,59,0.15);color:var(--red);}
+.nb-cyan{background:var(--badge-bg);color:var(--cyan);}
+.nb-orange{background:rgba(255,149,0,0.12);color:var(--orange);}
+
+.sidebar-footer{padding:14px;border-top:1px solid var(--border2);margin-top:auto;}
+.admin-card{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  background:linear-gradient(135deg,rgba(255,45,120,0.06),rgba(168,85,247,0.04));
+  border:1px solid rgba(255,45,120,0.15);cursor:pointer;
+}
+.admin-avatar{
+  width:36px;height:36px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--pink),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:#fff;
+}
+.admin-name{font-size:13px;font-weight:600;color:var(--text);}
+.admin-role{font-size:9px;color:var(--pink);font-family:'Share Tech Mono',monospace;letter-spacing:2px;}
+
+/* ============ TOPBAR ============ */
+.topbar{
+  position:fixed;top:0;left:250px;right:0;height:60px;z-index:100;
+  background:var(--topbar);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 24px;gap:14px;backdrop-filter:blur(14px);
+}
+.page-title{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:var(--pink);letter-spacing:3px;flex:1;}
+.page-title span{color:var(--text2);font-weight:400;font-size:11px;}
+
+.topbar-search{
+  display:flex;align-items:center;gap:8px;
+  background:var(--panel);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;
+}
+.topbar-search input{
+  background:transparent;border:none;outline:none;color:var(--text);
+  font-family:'Share Tech Mono',monospace;font-size:12px;width:160px;
+}
+.topbar-search input::placeholder{color:var(--text3);}
+.topbar-search svg{width:14px;height:14px;color:var(--text3);}
+
+.topbar-stat{
+  padding:6px 14px;border-radius:8px;border:1px solid var(--border2);
+  font-family:'Share Tech Mono',monospace;font-size:11px;
+  background:var(--panel);display:flex;align-items:center;gap:6px;
+}
+.ts-dot{width:6px;height:6px;border-radius:50%;}
+
+.btn-icon{
+  width:34px;height:34px;border-radius:8px;border:1px solid var(--border);
+  background:var(--panel);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text2);transition:.2s;flex-shrink:0;
+}
+.btn-icon:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn-icon svg{width:16px;height:16px;}
+
+/* ============ MAIN ============ */
+.main{margin-left:250px;margin-top:60px;padding:22px;min-height:calc(100vh - 60px);position:relative;z-index:1;}
+
+/* Pages */
+.page{display:none;}
+.page.active{display:block;}
+
+/* ============ CARDS ============ */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.grid-13{display:grid;grid-template-columns:1fr 2fr;gap:18px;}
+
+.section-title{
+  font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;
+  color:var(--text2);letter-spacing:3px;text-transform:uppercase;
+  margin-bottom:14px;margin-top:22px;display:flex;align-items:center;gap:10px;
+}
+.section-title:first-child{margin-top:0;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border2);}
+
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:18px;position:relative;overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,.18);
+}
+.card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--pink),transparent);opacity:.4;
+}
+
+/* ============ STAT CARDS ============ */
+.stat-card{padding:16px 18px;}
+.stat-icon-wrap{
+  width:44px;height:44px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:14px;
+}
+.stat-icon-wrap svg{width:22px;height:22px;}
+.stat-num{font-family:'Orbitron',sans-serif;font-size:30px;font-weight:900;line-height:1;}
+.stat-desc{font-size:12px;color:var(--text2);letter-spacing:1px;margin-top:4px;font-family:'Share Tech Mono',monospace;}
+.stat-foot{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:14px;padding-top:12px;border-top:1px solid var(--border2);
+  font-size:11px;font-family:'Share Tech Mono',monospace;
+}
+.trend-up{color:var(--green);}
+.trend-dn{color:var(--red);}
+
+/* ============ TABLE ============ */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{
+  padding:10px 14px;text-align:left;font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:2px;color:var(--text3);
+  border-bottom:1px solid var(--border2);font-weight:400;text-transform:uppercase;
+}
+tbody tr{border-bottom:1px solid var(--border2);cursor:pointer;transition:.15s;}
+tbody tr:hover{background:var(--row-hover);}
+tbody td{padding:11px 14px;vertical-align:middle;}
+.cell-name{font-weight:600;color:var(--text);}
+.cell-mono{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text2);}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:20px;font-size:10px;
+  font-family:'Share Tech Mono',monospace;letter-spacing:1px;font-weight:600;
+}
+.badge-green{background:rgba(0,255,153,0.1);color:var(--green);border:1px solid rgba(0,255,153,0.2);}
+.badge-red{background:rgba(255,59,59,0.1);color:var(--red);border:1px solid rgba(255,59,59,0.2);}
+.badge-orange{background:rgba(255,149,0,0.1);color:var(--orange);border:1px solid rgba(255,149,0,0.2);}
+.badge-cyan{background:rgba(0,200,255,0.1);color:var(--cyan);border:1px solid rgba(0,200,255,0.2);}
+.badge-purple{background:rgba(168,85,247,0.1);color:var(--purple);border:1px solid rgba(168,85,247,0.2);}
+.badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+/* ============ AVATAR ============ */
+.u-avatar{
+  width:30px;height:30px;border-radius:7px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;flex-shrink:0;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+}
+
+/* ============ ACTION BUTTONS ============ */
+.btn{
+  padding:7px 16px;border-radius:8px;font-family:'Rajdhani',sans-serif;
+  font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;border:none;
+  transition:.2s;display:inline-flex;align-items:center;gap:6px;
+}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#020b18;}
+.btn-primary:hover{opacity:.85;transform:translateY(-1px);}
+.btn-danger{background:rgba(255,59,59,0.12);color:var(--red);border:1px solid rgba(255,59,59,0.25);}
+.btn-danger:hover{background:rgba(255,59,59,0.2);}
+.btn-ghost{background:var(--panel);color:var(--text2);border:1px solid var(--border2);}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn-sm{padding:4px 10px;font-size:11px;}
+
+/* ============ CHART ============ */
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.chart-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:var(--cyan);letter-spacing:2px;}
+.chart-title.pink{color:var(--pink);}
+.chart-wrap{position:relative;}
+
+/* ============ DEVICE MAP ============ */
+.device-map{
+  background:#000d1a;border-radius:10px;position:relative;
+  height:220px;overflow:hidden;border:1px solid var(--border2);
+}
+.device-map svg{width:100%;height:100%;opacity:.15;}
+.device-node{
+  position:absolute;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;
+}
+.d-dot{
+  width:12px;height:12px;border-radius:50%;border:2px solid;
+  animation:nodePulse 2s infinite;
+}
+.d-label{font-family:'Share Tech Mono',monospace;font-size:9px;margin-top:3px;white-space:nowrap;}
+@keyframes nodePulse{0%{box-shadow:0 0 0 0 currentColor;}70%{box-shadow:0 0 0 8px transparent;}100%{box-shadow:0 0 0 0 transparent;}}
+
+/* ============ LOG TERMINAL ============ */
+.terminal{
+  background:#000d1a;border:1px solid var(--border2);border-radius:10px;
+  padding:14px;font-family:'Share Tech Mono',monospace;font-size:11px;
+  height:200px;overflow-y:auto;scrollbar-width:thin;
+}
+.terminal::-webkit-scrollbar{width:3px;}
+.terminal::-webkit-scrollbar-thumb{background:var(--border);}
+.log-line{margin-bottom:3px;line-height:1.6;}
+.ts{color:var(--text3);}
+.li{color:var(--cyan);}
+.lw{color:var(--orange);}
+.le{color:var(--red);}
+.lo{color:var(--green);}
+.lp{color:var(--purple);}
+
+/* ============ MODAL ============ */
+.modal-overlay{
+  position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.7);
+  backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:28px;width:480px;max-width:95vw;position:relative;
+  box-shadow:0 0 60px rgba(0,200,255,0.1);
+}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--pink),transparent);}
+.modal-title{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:var(--pink);letter-spacing:2px;margin-bottom:20px;}
+.modal-close{position:absolute;top:16px;right:16px;cursor:pointer;color:var(--text2);}
+.modal-close:hover{color:var(--text);}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:10px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;margin-bottom:7px;}
+.field input,.field select,.field textarea{
+  width:100%;padding:10px 14px;background:rgba(0,200,255,0.04);
+  border:1px solid var(--border);border-radius:8px;color:var(--text);
+  font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;transition:.3s;
+}
+.field input:focus,.field select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,200,255,0.08);}
+.field select option{background:#040f1f;}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+
+/* ============ ALERT CARD ============ */
+.alert-item{
+  display:flex;align-items:flex-start;gap:12px;padding:13px 16px;
+  border-radius:10px;border:1px solid var(--border2);margin-bottom:10px;
+  background:var(--panel);
+}
+.alert-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.alert-icon svg{width:18px;height:18px;}
+.alert-title{font-size:14px;font-weight:600;}
+.alert-meta{font-size:11px;color:var(--text2);font-family:'Share Tech Mono',monospace;margin-top:2px;}
+.alert-time{font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-left:auto;white-space:nowrap;}
+
+/* ============ SETTINGS ============ */
+.settings-section{margin-bottom:24px;}
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;border-bottom:1px solid var(--border2);
+}
+.settings-row:last-child{border-bottom:none;}
+.sr-left .sr-title{font-size:14px;font-weight:600;}
+.sr-left .sr-desc{font-size:12px;color:var(--text2);margin-top:2px;font-family:'Share Tech Mono',monospace;}
+.toggle{position:relative;width:44px;height:24px;cursor:pointer;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{position:absolute;inset:0;border-radius:12px;background:var(--border2);border:1px solid var(--border);transition:.3s;}
+.toggle input:checked~.toggle-track{background:var(--cyan);border-color:var(--cyan);}
+.toggle-knob{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text2);transition:.3s;}
+.toggle input:checked~.toggle-knob{left:23px;background:#020b18;}
+
+/* ============ TOAST ============ */
+.toast{
+  position:fixed;bottom:20px;right:20px;z-index:999;
+  padding:11px 18px;border-radius:10px;background:var(--card);
+  border:1px solid var(--pink);font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--pink);
+  box-shadow:0 0 30px rgba(255,45,120,0.15);transform:translateX(120%);transition:.4s;
+}
+.toast.show{transform:translateX(0);}
+
+/* ============ PROGRESS ============ */
+.prog-bar{height:5px;border-radius:3px;background:var(--border2);margin-top:8px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;transition:width 1s;}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:1200px){.grid-4{grid-template-columns:1fr 1fr;}}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main,.topbar{margin-left:0;left:0;}
+  .grid-2,.grid-3,.grid-4,.grid-13{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- ============ SIDEBAR ============ -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="s-logo-hex">
+      <svg viewBox="0 0 36 36" fill="none">
+        <path d="M18 3L33 11V25L18 33L3 25V11L18 3Z" stroke="#ff2d78" stroke-width="1.5"/>
+        <path d="M18 3V33M3 11L33 25M33 11L3 25" stroke="#ff2d78" stroke-width=".6" opacity=".4"/>
+        <circle cx="18" cy="18" r="4" fill="rgba(255,45,120,0.2)" stroke="#a855f7" stroke-width="1.5"/>
+        <circle cx="18" cy="18" r="1.5" fill="#a855f7"/>
+      </svg>
+    </div>
+    <div>
+      <div class="s-brand">ELEXYS</div>
+      <div class="s-brand-sub">ADMIN PANEL</div>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Overview</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('analytics',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Analytics
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Management</div>
+    <div class="nav-item" onclick="showPage('users',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Users
+      <span class="nav-badge nb-cyan" id="userCount">0</span>
+    </div>
+    <div class="nav-item" onclick="showPage('devices',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      Devices
+      <span class="nav-badge nb-cyan" id="devCount">0</span>
+    </div>
+    <div class="nav-item" onclick="showPage('alerts',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+      Alerts
+      <span class="nav-badge nb-red" id="alertCount">4</span>
+    </div>
+    <div class="nav-item" onclick="showPage('logs',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      System Logs
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">System</div>
+    <div class="nav-item" onclick="showPage('settings',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06-.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Settings
+    </div>
+    <div class="nav-item" onclick="logout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      Logout
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="admin-card">
+      <div class="admin-avatar" id="adminAvatar">A</div>
+      <div>
+        <div class="admin-name" id="adminName">Admin</div>
+        <div class="admin-role">SUPER ADMIN</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ TOPBAR ============ -->
+<header class="topbar">
+  <div class="page-title" id="pageTitle">DASHBOARD <span>/ Admin Overview</span></div>
+  <div class="topbar-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" placeholder="Search users, devices..." oninput="searchFilter(this.value)"/>
+  </div>
+  <div class="topbar-stat">
+    <div class="ts-dot" style="background:var(--green);box-shadow:0 0 6px var(--green);border-radius:50%;width:6px;height:6px;"></div>
+    <span style="color:var(--green);font-family:'Share Tech Mono',monospace;font-size:11px;">SYSTEM OK</span>
+  </div>
+  <div class="topbar-stat" style="color:var(--cyan);" id="clockDisplay">00:00:00</div>
+  <div class="btn-icon" onclick="toggleTheme()" title="Theme">
+    <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+  </div>
+  <div class="btn-icon" onclick="openModal('addUserModal')" title="Add User">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+  </div>
+</header>
+
+<!-- ============ MAIN ============ -->
+<main class="main">
+
+  <!-- ========= PAGE: DASHBOARD ========= -->
+  <div class="page active" id="page-dashboard">
+
+    <div class="section-title">Platform Overview</div>
+    <div class="grid-4">
+      <div class="card stat-card">
+        <div class="stat-icon-wrap" style="background:rgba(0,200,255,0.1);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00c8ff" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div class="stat-num" id="stat-users">0</div>
+        <div class="stat-desc">TOTAL STUDENTS</div>
+        <div class="stat-foot">
+          <span class="trend-up">▲ +3 this week</span>
+          <span style="font-size:10px;color:var(--text3);">REGISTERED</span>
+        </div>
+      </div>
+
+      <div class="card stat-card">
+        <div class="stat-icon-wrap" style="background:rgba(0,255,153,0.1);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00ff99" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>
+        <div class="stat-num" id="stat-devices">0</div>
+        <div class="stat-desc">ACTIVE DEVICES</div>
+        <div class="stat-foot">
+          <span class="trend-up">▲ 94% online</span>
+          <span style="font-size:10px;color:var(--text3);">LIVE</span>
+        </div>
+      </div>
+
+      <div class="card stat-card">
+        <div class="stat-icon-wrap" style="background:rgba(168,85,247,0.1);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="stat-num" id="stat-datapoints">0</div>
+        <div class="stat-desc">DATA POINTS TODAY</div>
+        <div class="stat-foot">
+          <span class="trend-up">▲ +12.4%</span>
+          <span style="font-size:10px;color:var(--text3);">vs YESTERDAY</span>
+        </div>
+      </div>
+
+      <div class="card stat-card">
+        <div class="stat-icon-wrap" style="background:rgba(255,45,120,0.1);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ff2d78" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        </div>
+        <div class="stat-num" id="stat-alerts">4</div>
+        <div class="stat-desc">ACTIVE ALERTS</div>
+        <div class="stat-foot">
+          <span class="trend-dn">▼ 2 critical</span>
+          <span style="font-size:10px;color:var(--text3);">ACTION NEEDED</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="section-title">Traffic & Data Analytics</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="chart-header">
+          <div class="chart-title">USER REGISTRATIONS</div>
+          <span class="badge badge-cyan">LAST 7 DAYS</span>
+        </div>
+        <div class="chart-wrap" style="height:190px;"><canvas id="regChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="chart-header">
+          <div class="chart-title pink">DATA THROUGHPUT</div>
+          <span class="badge badge-purple">REAL-TIME</span>
+        </div>
+        <div class="chart-wrap" style="height:190px;"><canvas id="throughputChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Board Distribution + Device Map -->
+    <div class="section-title">Board Distribution & Live Device Map</div>
+    <div class="grid-13">
+      <div class="card">
+        <div class="chart-header"><div class="chart-title">BOARD TYPES</div></div>
+        <div class="chart-wrap" style="height:190px;"><canvas id="boardChart"></canvas></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text2);">
+            <div style="width:10px;height:10px;border-radius:2px;background:#00c8ff;flex-shrink:0;"></div>ESP32 (42%)
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text2);">
+            <div style="width:10px;height:10px;border-radius:2px;background:#00ff99;flex-shrink:0;"></div>ESP8266 (28%)
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text2);">
+            <div style="width:10px;height:10px;border-radius:2px;background:#a855f7;flex-shrink:0;"></div>Raspberry Pi (18%)
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text2);">
+            <div style="width:10px;height:10px;border-radius:2px;background:#ff9500;flex-shrink:0;"></div>Pi Pico (12%)
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="chart-header"><div class="chart-title">LIVE DEVICE MAP</div></div>
+        <div class="device-map" id="deviceMap">
+          <svg viewBox="0 0 800 300"><ellipse cx="400" cy="150" rx="350" ry="120" fill="none" stroke="rgba(0,200,255,0.3)" stroke-width="1"/><ellipse cx="400" cy="150" rx="200" ry="70" fill="none" stroke="rgba(0,200,255,0.2)" stroke-width="1"/><ellipse cx="400" cy="150" rx="80" ry="28" fill="none" stroke="rgba(0,200,255,0.15)" stroke-width="1"/><line x1="50" y1="150" x2="750" y2="150" stroke="rgba(0,200,255,0.1)" stroke-width="1"/><line x1="400" y1="30" x2="400" y2="270" stroke="rgba(0,200,255,0.1)" stroke-width="1"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Users Table -->
+    <div class="section-title">Recent Students</div>
+    <div class="card">
+      <div class="chart-header">
+        <div class="chart-title">STUDENT ACCOUNTS</div>
+        <button class="btn btn-primary btn-sm" onclick="showPage('users',null);openModal('addUserModal')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Student
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Student</th><th>Email</th><th>Board</th><th>Status</th><th>Last Seen</th><th>Actions</th></tr></thead>
+          <tbody id="recentUsersTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= PAGE: USERS ========= -->
+  <div class="page" id="page-users">
+    <div class="section-title">Student Management</div>
+    <div class="card" style="margin-bottom:18px;">
+      <div class="chart-header">
+        <div class="chart-title">ALL STUDENTS</div>
+        <div style="display:flex;gap:8px;">
+          <select id="filterBoard" onchange="renderUsersTable()" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;color:var(--text2);padding:5px 10px;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;">
+            <option value="">All Boards</option>
+            <option>ESP32</option><option>ESP8266</option><option>Raspberry Pi</option><option>Pi Pico</option><option>Arduino</option>
+          </select>
+          <select id="filterStatus" onchange="renderUsersTable()" style="background:var(--panel);border:1px solid var(--border2);border-radius:6px;color:var(--text2);padding:5px 10px;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;">
+            <option value="">All Status</option>
+            <option>Online</option><option>Offline</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="openModal('addUserModal')">+ Add Student</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Student</th><th>Email</th><th>Board</th><th>Devices</th><th>Data Points</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="usersTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= PAGE: DEVICES ========= -->
+  <div class="page" id="page-devices">
+    <div class="section-title">Device Registry</div>
+    <div class="card">
+      <div class="chart-header">
+        <div class="chart-title">ALL REGISTERED DEVICES</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('addDeviceModal')">+ Register Device</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Device ID</th><th>Owner</th><th>Board</th><th>IP Address</th><th>Signal</th><th>Last Data</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="devicesTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= PAGE: ANALYTICS ========= -->
+  <div class="page" id="page-analytics">
+    <div class="section-title">Platform Analytics</div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="chart-header"><div class="chart-title">HOURLY REQUESTS</div></div>
+        <div class="chart-wrap" style="height:170px;"><canvas id="hourlyChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="chart-header"><div class="chart-title">SENSOR TYPES</div></div>
+        <div class="chart-wrap" style="height:170px;"><canvas id="sensorChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="chart-header"><div class="chart-title">ERROR RATE</div></div>
+        <div class="chart-wrap" style="height:170px;"><canvas id="errorChart"></canvas></div>
+      </div>
+    </div>
+    <div class="section-title">System Performance</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="chart-header"><div class="chart-title">SERVER RESOURCES</div></div>
+        <div style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:6px;">
+            <span>CPU Usage</span><span style="color:var(--cyan);font-family:'Share Tech Mono',monospace;" id="cpuPct">34%</span>
+          </div>
+          <div class="prog-bar"><div class="prog-fill" id="cpuBar" style="width:34%;background:linear-gradient(90deg,#00c8ff,#00ffe7)"></div></div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:6px;">
+            <span>Memory</span><span style="color:var(--purple);font-family:'Share Tech Mono',monospace;" id="memPct">58%</span>
+          </div>
+          <div class="prog-bar"><div class="prog-fill" id="memBar" style="width:58%;background:linear-gradient(90deg,#a855f7,#ff2d78)"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:6px;">
+            <span>Storage</span><span style="color:var(--orange);font-family:'Share Tech Mono',monospace;" id="stoPct">22%</span>
+          </div>
+          <div class="prog-bar"><div class="prog-fill" id="stoBar" style="width:22%;background:linear-gradient(90deg,#ff9500,#ffe000)"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="chart-header"><div class="chart-title">FIREBASE USAGE</div></div>
+        <div class="device-info" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="padding:12px;background:var(--panel);border:1px solid var(--border2);border-radius:8px;">
+            <div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:4px;">READS / DAY</div>
+            <div style="font-size:20px;font-weight:700;font-family:'Orbitron',sans-serif;color:var(--cyan);" id="fbReads">0</div>
+          </div>
+          <div style="padding:12px;background:var(--panel);border:1px solid var(--border2);border-radius:8px;">
+            <div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:4px;">WRITES / DAY</div>
+            <div style="font-size:20px;font-weight:700;font-family:'Orbitron',sans-serif;color:var(--green);" id="fbWrites">0</div>
+          </div>
+          <div style="padding:12px;background:var(--panel);border:1px solid var(--border2);border-radius:8px;">
+            <div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:4px;">STORAGE USED</div>
+            <div style="font-size:20px;font-weight:700;font-family:'Orbitron',sans-serif;color:var(--orange);" id="fbStorage">0 MB</div>
+          </div>
+          <div style="padding:12px;background:var(--panel);border:1px solid var(--border2);border-radius:8px;">
+            <div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:4px;">ACTIVE STREAMS</div>
+            <div style="font-size:20px;font-weight:700;font-family:'Orbitron',sans-serif;color:var(--purple);" id="fbStreams">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= PAGE: ALERTS ========= -->
+  <div class="page" id="page-alerts">
+    <div class="section-title">System Alerts</div>
+    <div class="grid-2">
+      <div>
+        <div class="alert-item">
+          <div class="alert-icon" style="background:rgba(255,59,59,0.1);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ff3b3b" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div>
+            <div class="alert-title">Device Offline — ESP32_LAB_03</div>
+            <div class="alert-meta">No heartbeat received for 12 minutes</div>
+          </div>
+          <div class="alert-time">12m ago</div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-icon" style="background:rgba(255,149,0,0.1);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ff9500" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div>
+            <div class="alert-title">High Temperature — Sensor DHT_B02</div>
+            <div class="alert-meta">Reading 52°C — exceeds threshold 45°C</div>
+          </div>
+          <div class="alert-time">28m ago</div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-icon" style="background:rgba(255,59,59,0.1);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ff3b3b" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </div>
+          <div>
+            <div class="alert-title">Auth Failure — 5 failed login attempts</div>
+            <div class="alert-meta">IP: 192.168.1.104 — possible brute force</div>
+          </div>
+          <div class="alert-time">1h ago</div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-icon" style="background:rgba(168,85,247,0.1);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div>
+            <div class="alert-title">Data Spike — Pi Pico #7</div>
+            <div class="alert-meta">Anomalous reading: 9999 lux from LDR sensor</div>
+          </div>
+          <div class="alert-time">2h ago</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="chart-header"><div class="chart-title">ALERT FREQUENCY</div></div>
+        <div class="chart-wrap" style="height:200px;"><canvas id="alertChart"></canvas></div>
+        <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+          <div style="padding:10px;background:rgba(255,59,59,0.08);border:1px solid rgba(255,59,59,0.2);border-radius:8px;">
+            <div style="font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;color:var(--red);">2</div>
+            <div style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;margin-top:2px;">CRITICAL</div>
+          </div>
+          <div style="padding:10px;background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.2);border-radius:8px;">
+            <div style="font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;color:var(--orange);">1</div>
+            <div style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;margin-top:2px;">WARNING</div>
+          </div>
+          <div style="padding:10px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:8px;">
+            <div style="font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;color:var(--purple);">1</div>
+            <div style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;margin-top:2px;">INFO</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= PAGE: LOGS ========= -->
+  <div class="page" id="page-logs">
+    <div class="section-title">System Logs</div>
+    <div class="card">
+      <div class="chart-header">
+        <div class="chart-title">LIVE SYSTEM LOG</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="clearSysLog()">Clear</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportLog()">Export</button>
+        </div>
+      </div>
+      <div class="terminal" id="sysTerminal" style="height:400px;"></div>
+    </div>
+  </div>
+
+  <!-- ========= PAGE: SETTINGS ========= -->
+  <div class="page" id="page-settings">
+    <div class="section-title">System Settings</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="chart-title" style="margin-bottom:18px;">PLATFORM CONFIGURATION</div>
+        <div class="settings-section">
+          <div class="settings-row">
+            <div class="sr-left"><div class="sr-title">Maintenance Mode</div><div class="sr-desc">Block all student logins</div></div>
+            <label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-knob"></div></label>
+          </div>
+          <div class="settings-row">
+            <div class="sr-left"><div class="sr-title">Google Sign-In</div><div class="sr-desc">Allow OAuth via Google</div></div>
+            <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-knob"></div></label>
+          </div>
+          <div class="settings-row">
+            <div class="sr-left"><div class="sr-title">Auto Device Discovery</div><div class="sr-desc">Auto-register new boards</div></div>
+            <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-knob"></div></label>
+          </div>
+          <div class="settings-row">
+            <div class="sr-left"><div class="sr-title">Email Alerts</div><div class="sr-desc">Notify admin on critical alerts</div></div>
+            <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-knob"></div></label>
+          </div>
+          <div class="settings-row">
+            <div class="sr-left"><div class="sr-title">Data Retention (days)</div><div class="sr-desc">Auto-delete old sensor data</div></div>
+            <input type="number" value="30" style="width:80px;padding:6px 10px;background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:13px;outline:none;text-align:center;"/>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;">Save Configuration</button>
+      </div>
+
+      <div class="card">
+        <div class="chart-title" style="margin-bottom:18px;">FIREBASE CONFIG</div>
+        <div class="field"><label>API Key</label><input type="password" placeholder="••••••••••••••••" id="fb-apiKey"/></div>
+        <div class="field"><label>Auth Domain</label><input type="text" placeholder="your-project.firebaseapp.com" id="fb-authDomain"/></div>
+        <div class="field"><label>Database URL</label><input type="text" placeholder="https://your-project-rtdb.firebaseio.com" id="fb-dbUrl"/></div>
+        <div class="field"><label>Project ID</label><input type="text" placeholder="your-project-id" id="fb-projectId"/></div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="saveFirebaseConfig()">Save & Connect</button>
+          <button class="btn btn-ghost" onclick="testFirebase()">Test</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ========= MODALS ========= -->
+<!-- Add User Modal -->
+<div class="modal-overlay" id="addUserModal">
+  <div class="modal">
+    <div class="modal-title">ADD STUDENT</div>
+    <div class="modal-close" onclick="closeModal('addUserModal')">✕</div>
+    <div class="field"><label>Full Name</label><input type="text" id="m-name" placeholder="Student name"/></div>
+    <div class="field"><label>Email Address</label><input type="email" id="m-email" placeholder="student@example.com"/></div>
+    <div class="field"><label>Password</label><input type="password" id="m-pass" placeholder="Min 8 characters"/></div>
+    <div class="field">
+      <label>Board</label>
+      <select id="m-board">
+        <option>ESP32</option><option>ESP8266</option><option>Raspberry Pi</option><option>Pi Pico</option><option>Arduino</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Role</label>
+      <select id="m-role"><option value="student">Student</option><option value="admin">Admin</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addUserModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addUser()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Device Modal -->
+<div class="modal-overlay" id="addDeviceModal">
+  <div class="modal">
+    <div class="modal-title">REGISTER DEVICE</div>
+    <div class="modal-close" onclick="closeModal('addDeviceModal')">✕</div>
+    <div class="field"><label>Device Name</label><input type="text" id="d-name" placeholder="e.g. ESP32_LAB_01"/></div>
+    <div class="field"><label>Owner UID / Email</label><input type="text" id="d-owner" placeholder="User UID or email"/></div>
+    <div class="field"><label>Board Type</label>
+      <select id="d-board"><option>ESP32</option><option>ESP8266</option><option>Raspberry Pi</option><option>Pi Pico</option><option>Arduino</option></select>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="d-notes" rows="2" placeholder="Optional notes..." style="resize:vertical;"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addDeviceModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addDevice()">Register</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="adminToast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, updateProfile }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, getDoc, onSnapshot, query, orderBy }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getDatabase, ref, onValue, set }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ============================================================
+// 🔧 REPLACE WITH YOUR FIREBASE CONFIG
+// ============================================================
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+// ============================================================
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const fs = getFirestore(app);
+const rtdb = getDatabase(app);
+
+// Auth guard — only admins
+onAuthStateChanged(auth, async user => {
+  if(!user){ window.location.href='login.html'; return; }
+  const snap = await getDoc(doc(fs,'users',user.uid));
+  if(!snap.exists() || snap.data().role !== 'admin'){
+    window.location.href='index.html'; return;
+  }
+  const name = user.displayName || user.email.split('@')[0];
+  document.getElementById('adminName').textContent = name;
+  document.getElementById('adminAvatar').textContent = name[0].toUpperCase();
+  loadUsers();
+  loadAnalytics();
+});
+
+window.logout = async () => { await signOut(auth); window.location.href='login.html'; };
+
+// Load Users
+async function loadUsers(){
+  const snap = await getDocs(collection(fs,'users'));
+  window._users = [];
+  snap.forEach(d=>window._users.push({id:d.id,...d.data()}));
+  document.getElementById('userCount').textContent = window._users.length;
+  document.getElementById('stat-users').textContent = window._users.length;
+  renderUsersTable();
+  renderRecentUsers();
+  addSysLog(`Loaded ${window._users.length} student accounts`,'lo');
+}
+
+window.renderUsersTable = function(){
+  const board = document.getElementById('filterBoard')?.value||'';
+  const status = document.getElementById('filterStatus')?.value||'';
+  const search = window._searchQ||'';
+  const filtered = (window._users||[]).filter(u=>{
+    if(board && u.board!==board) return false;
+    if(search && !u.name?.toLowerCase().includes(search) && !u.email?.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  const tbody = document.getElementById('usersTable');
+  if(!tbody) return;
+  tbody.innerHTML = filtered.map((u,i)=>`
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:8px;">
+        <div class="u-avatar" style="background:linear-gradient(135deg,${avatarColor(i)});">${(u.name||'?')[0].toUpperCase()}</div>
+        <div class="cell-name">${u.name||'Unknown'}</div></div></td>
+      <td class="cell-mono">${u.email||''}</td>
+      <td><span class="badge badge-cyan">${u.board||'—'}</span></td>
+      <td class="cell-mono">1</td>
+      <td class="cell-mono">${Math.floor(Math.random()*5000)+100}</td>
+      <td><span class="badge ${Math.random()>.4?'badge-green':'badge-red'}">
+        <div class="badge-dot"></div>${Math.random()>.4?'Online':'Offline'}</span></td>
+      <td class="cell-mono">${u.createdAt?u.createdAt.slice(0,10):'—'}</td>
+      <td><div style="display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="viewUser('${u.id}')">View</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Del</button>
+      </div></td>
+    </tr>`).join('');
+};
+
+window.renderRecentUsers = function(){
+  const tbody = document.getElementById('recentUsersTable');
+  if(!tbody) return;
+  const recent = (window._users||[]).slice(0,6);
+  tbody.innerHTML = recent.map((u,i)=>`
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:8px;">
+        <div class="u-avatar" style="background:linear-gradient(135deg,${avatarColor(i)});">${(u.name||'?')[0].toUpperCase()}</div>
+        <div class="cell-name">${u.name||'Unknown'}</div></div></td>
+      <td class="cell-mono">${u.email||''}</td>
+      <td><span class="badge badge-cyan">${u.board||'—'}</span></td>
+      <td><span class="badge ${Math.random()>.4?'badge-green':'badge-red'}">
+        <div class="badge-dot"></div>${Math.random()>.4?'Online':'Offline'}</span></td>
+      <td class="cell-mono">${Math.floor(Math.random()*60)+1}m ago</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="viewUser('${u.id}')">View</button></td>
+    </tr>`).join('');
+};
+
+window.addUser = async function(){
+  const name=document.getElementById('m-name').value;
+  const email=document.getElementById('m-email').value;
+  const pass=document.getElementById('m-pass').value;
+  const board=document.getElementById('m-board').value;
+  const role=document.getElementById('m-role').value;
+  if(!name||!email||!pass){showToast('Fill all required fields'); return;}
+  try{
+    const cred=await createUserWithEmailAndPassword(auth,email,pass);
+    await updateProfile(cred.user,{displayName:name});
+    await setDoc(doc(fs,'users',cred.user.uid),{name,email,board,role,createdAt:new Date().toISOString()});
+    closeModal('addUserModal');
+    showToast('✅ Student added: '+name);
+    addSysLog(`New student created: ${name} (${email})`,'lo');
+    loadUsers();
+  }catch(e){ showToast('Error: '+e.message); }
+};
+
+window.deleteUser = async function(uid){
+  if(!confirm('Delete this student?')) return;
+  await deleteDoc(doc(fs,'users',uid));
+  showToast('🗑 Student removed');
+  loadUsers();
+};
+
+window.viewUser = function(uid){ showToast('📋 Viewing user: '+uid.slice(0,8)+'...'); };
+
+// Devices (mock + Firebase rtdb)
+window._devices = [
+  {id:'EX-A3F2',owner:'Student A',board:'ESP32',ip:'192.168.1.42',rssi:'-65 dBm',last:'2s ago',status:'Online'},
+  {id:'EX-B7C1',owner:'Student B',board:'ESP8266',ip:'192.168.1.55',rssi:'-72 dBm',last:'18s ago',status:'Online'},
+  {id:'EX-C2D4',owner:'Student C',board:'Raspberry Pi',ip:'192.168.1.71',rssi:'-88 dBm',last:'12m ago',status:'Offline'},
+  {id:'EX-D9E3',owner:'Student D',board:'Pi Pico',ip:'192.168.1.89',rssi:'-60 dBm',last:'5s ago',status:'Online'},
+  {id:'EX-E1F6',owner:'Student E',board:'Arduino',ip:'192.168.1.102',rssi:'-79 dBm',last:'3m ago',status:'Online'},
+];
+document.getElementById('devCount').textContent = window._devices.length;
+document.getElementById('stat-devices').textContent = window._devices.length;
+
+function renderDevices(){
+  const tbody = document.getElementById('devicesTable');
+  if(!tbody) return;
+  tbody.innerHTML = window._devices.map(d=>`
+    <tr>
+      <td class="cell-mono" style="color:var(--cyan);">${d.id}</td>
+      <td class="cell-name">${d.owner}</td>
+      <td><span class="badge badge-cyan">${d.board}</span></td>
+      <td class="cell-mono">${d.ip}</td>
+      <td class="cell-mono">${d.rssi}</td>
+      <td class="cell-mono">${d.last}</td>
+      <td><span class="badge ${d.status==='Online'?'badge-green':'badge-red'}">
+        <div class="badge-dot"></div>${d.status}</span></td>
+      <td><div style="display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="showToast('📡 Pinging device...')">Ping</button>
+        <button class="btn btn-danger btn-sm" onclick="removeDevice('${d.id}')">Remove</button>
+      </div></td>
+    </tr>`).join('');
+}
+renderDevices();
+
+window.addDevice = function(){
+  const name=document.getElementById('d-name').value;
+  const owner=document.getElementById('d-owner').value;
+  const board=document.getElementById('d-board').value;
+  if(!name||!owner){showToast('Fill required fields');return;}
+  window._devices.push({id:'EX-'+Math.random().toString(36).slice(2,6).toUpperCase(),owner,board,ip:'—',rssi:'—',last:'just now',status:'Pending'});
+  renderDevices();
+  closeModal('addDeviceModal');
+  showToast('✅ Device registered: '+name);
+  document.getElementById('devCount').textContent=window._devices.length;
+};
+window.removeDevice=function(id){window._devices=window._devices.filter(d=>d.id!==id);renderDevices();showToast('🗑 Device removed');};
+
+function loadAnalytics(){
+  const n=Math.floor(Math.random()*50000)+10000;
+  document.getElementById('stat-datapoints').textContent=n.toLocaleString();
+  document.getElementById('fbReads').textContent=(n*3).toLocaleString();
+  document.getElementById('fbWrites').textContent=n.toLocaleString();
+  document.getElementById('fbStorage').textContent=(Math.random()*50).toFixed(1)+' MB';
+  document.getElementById('fbStreams').textContent=Math.floor(Math.random()*20)+5;
+}
+
+// System Performance Simulation
+setInterval(()=>{
+  const cpu=20+Math.random()*50;
+  const mem=50+Math.random()*30;
+  document.getElementById('cpuPct').textContent=cpu.toFixed(0)+'%';
+  document.getElementById('memPct').textContent=mem.toFixed(0)+'%';
+  document.getElementById('cpuBar').style.width=cpu+'%';
+  document.getElementById('memBar').style.width=mem+'%';
+  if(cpu>60) addSysLog(`High CPU usage: ${cpu.toFixed(0)}%`,'lw');
+},5000);
+
+window.saveFirebaseConfig=function(){showToast('✅ Firebase config saved');addSysLog('Firebase config updated by admin','lp');};
+window.testFirebase=function(){showToast('🔌 Testing Firebase connection...');setTimeout(()=>showToast('✅ Firebase connected OK'),1500);};
+</script>
+
+<script>
+// ---- Charts ----
+const co=(label,color,type='line')=>({
+  responsive:true,maintainAspectRatio:false,animation:{duration:400},
+  plugins:{legend:{display:false}},
+  scales:{
+    x:{grid:{color:'rgba(0,200,255,0.04)'},ticks:{color:'#3a6080',font:{family:'Share Tech Mono',size:9}},border:{display:false}},
+    y:{grid:{color:'rgba(0,200,255,0.04)'},ticks:{color:'#3a6080',font:{family:'Share Tech Mono',size:9}},border:{display:false}}
+  }
+});
+
+// Registration Chart
+new Chart(document.getElementById('regChart'),{
+  type:'bar',
+  data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    datasets:[{data:[4,7,3,9,5,12,6],backgroundColor:'rgba(0,200,255,0.3)',borderColor:'#00c8ff',borderWidth:1,borderRadius:4}]},
+  options:co('Registrations','#00c8ff')
+});
+
+// Throughput Chart
+const thrLabels=[];for(let i=11;i>=0;i--) thrLabels.push(i===0?'Now':`${i*5}m`);
+const thrChart=new Chart(document.getElementById('throughputChart'),{
+  type:'line',
+  data:{labels:thrLabels,datasets:[{data:Array.from({length:12},()=>Math.floor(Math.random()*500)+100),borderColor:'#ff2d78',backgroundColor:'rgba(255,45,120,0.08)',borderWidth:2,tension:.4,pointRadius:2,pointBackgroundColor:'#ff2d78',fill:true}]},
+  options:co('Throughput','#ff2d78')
+});
+setInterval(()=>{
+  thrChart.data.datasets[0].data.shift();
+  thrChart.data.datasets[0].data.push(Math.floor(Math.random()*500)+100);
+  thrChart.update('none');
+},2500);
+
+// Board Doughnut
+new Chart(document.getElementById('boardChart'),{
+  type:'doughnut',
+  data:{labels:['ESP32','ESP8266','Raspberry Pi','Pi Pico'],
+    datasets:[{data:[42,28,18,12],backgroundColor:['rgba(0,200,255,0.7)','rgba(0,255,153,0.7)','rgba(168,85,247,0.7)','rgba(255,149,0,0.7)'],borderColor:['#00c8ff','#00ff99','#a855f7','#ff9500'],borderWidth:2}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
+});
+
+// Hourly Chart
+new Chart(document.getElementById('hourlyChart'),{
+  type:'line',
+  data:{labels:['00','03','06','09','12','15','18','21'],
+    datasets:[{data:[120,80,200,450,380,500,420,310],borderColor:'#00c8ff',backgroundColor:'rgba(0,200,255,0.08)',borderWidth:2,tension:.4,fill:true,pointRadius:2,pointBackgroundColor:'#00c8ff'}]},
+  options:co('Hourly','#00c8ff')
+});
+
+// Sensor Types
+new Chart(document.getElementById('sensorChart'),{
+  type:'polarArea',
+  data:{labels:['DHT22','LDR','PIR','BMP280','MQ-135'],
+    datasets:[{data:[35,25,15,15,10],backgroundColor:['rgba(0,200,255,0.6)','rgba(0,255,153,0.6)','rgba(168,85,247,0.6)','rgba(255,149,0,0.6)','rgba(255,45,120,0.6)']}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+});
+
+// Error Rate
+new Chart(document.getElementById('errorChart'),{
+  type:'line',
+  data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    datasets:[{data:[2,5,1,8,3,1,4],borderColor:'#ff3b3b',backgroundColor:'rgba(255,59,59,0.08)',borderWidth:2,tension:.4,fill:true,pointRadius:3,pointBackgroundColor:'#ff3b3b'}]},
+  options:co('Errors','#ff3b3b')
+});
+
+// Alert Freq Chart
+new Chart(document.getElementById('alertChart'),{
+  type:'bar',
+  data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    datasets:[
+      {label:'Critical',data:[1,2,0,3,1,0,2],backgroundColor:'rgba(255,59,59,0.5)',borderColor:'#ff3b3b',borderWidth:1,borderRadius:3},
+      {label:'Warning',data:[3,1,4,2,3,1,1],backgroundColor:'rgba(255,149,0,0.4)',borderColor:'#ff9500',borderWidth:1,borderRadius:3}
+    ]},
+  options:{...co('Alerts','#ff3b3b'),plugins:{legend:{display:true,labels:{color:'#5a8aaa',font:{family:'Share Tech Mono',size:10}}}}}
+});
+
+// Device Map nodes
+const mapNodes=[
+  {label:'ESP32_01',top:'35%',left:'30%',color:'#00c8ff',online:true},
+  {label:'ESP8266_02',top:'60%',left:'55%',color:'#00ff99',online:true},
+  {label:'RPi_03',top:'25%',left:'65%',color:'#ff3b3b',online:false},
+  {label:'Pico_04',top:'55%',left:'20%',color:'#ff9500',online:true},
+  {label:'Arduino_05',top:'40%',left:'75%',color:'#a855f7',online:true},
+];
+const mapEl=document.getElementById('deviceMap');
+mapNodes.forEach(n=>{
+  const nd=document.createElement('div');
+  nd.className='device-node';
+  nd.style.cssText=`top:${n.top};left:${n.left};`;
+  nd.style.color=n.online?n.color:'#555';
+  nd.innerHTML=`<div class="d-dot" style="background:${n.online?n.color:'#555'};border-color:${n.online?n.color:'#555'};${n.online?'':'animation:none;'}"></div><div class="d-label" style="color:${n.online?n.color:'#555'}">${n.label}</div>`;
+  nd.onclick=()=>showToast(`📡 ${n.label} — ${n.online?'Online':'Offline'}`);
+  mapEl.appendChild(nd);
+});
+
+// ---- Page Navigation ----
+window.showPage=function(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const target=document.getElementById('page-'+page);
+  if(target) target.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const titles={dashboard:'DASHBOARD <span>/ Admin Overview</span>',users:'STUDENTS <span>/ User Management</span>',devices:'DEVICES <span>/ Registry</span>',analytics:'ANALYTICS <span>/ Platform Stats</span>',alerts:'ALERTS <span>/ System Notifications</span>',logs:'LOGS <span>/ System Activity</span>',settings:'SETTINGS <span>/ Configuration</span>'};
+  document.getElementById('pageTitle').innerHTML=titles[page]||page.toUpperCase();
+};
+
+// ---- Modal ----
+window.openModal=function(id){document.getElementById(id).classList.add('open');}
+window.closeModal=function(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+// ---- Toast ----
+window.showToast=function(msg){
+  const t=document.getElementById('adminToast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+};
+
+// ---- System Log ----
+const sysLogs=[
+  {m:'Elexys Admin Panel initialized','c':'lo'},
+  {m:'Firebase Firestore connected','c':'lo'},
+  {m:'Firebase Realtime DB connected','c':'lo'},
+  {m:'Auth guard: admin verified','c':'lp'},
+  {m:'Loading student accounts...','c':'li'},
+];
+sysLogs.forEach(l=>addSysLog(l.m,l.c));
+
+function addSysLog(msg,cls='li'){
+  const term=document.getElementById('sysTerminal');
+  if(!term) return;
+  const t=new Date().toLocaleTimeString('en-GB',{hour12:false});
+  const line=document.createElement('div');
+  line.className='log-line';
+  line.innerHTML=`<span class="ts">[${t}]</span> <span class="${cls}">${msg}</span>`;
+  term.appendChild(line);
+  term.scrollTop=term.scrollHeight;
+}
+window.addSysLog=addSysLog;
+window.clearSysLog=function(){document.getElementById('sysTerminal').innerHTML='';}
+window.exportLog=function(){
+  const lines=[...document.getElementById('sysTerminal').querySelectorAll('.log-line')].map(l=>l.textContent).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(lines);
+  a.download='elexys-log-'+Date.now()+'.txt';a.click();
+};
+
+// Live log interval
+setInterval(()=>{
+  const msgs=[
+    ['Sensor data received from ESP32_01','li'],['MQTT heartbeat OK','lo'],
+    ['Token refreshed for user session','lp'],['Data written to Firestore','lo'],
+    ['GPIO state updated: GPIO2=HIGH','li'],['Anomaly check passed','lo'],
+  ];
+  const r=msgs[Math.floor(Math.random()*msgs.length)];
+  addSysLog(r[0],r[1]);
+},4000);
+
+// ---- Theme ----
+let isDark=true;
+window.toggleTheme=function(){
+  isDark=!isDark;
+  document.documentElement.setAttribute('data-theme',isDark?'dark':'light');
+  const icon=document.getElementById('themeIcon');
+  icon.innerHTML=isDark?'<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>':'<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>';
+};
+
+// ---- Clock ----
+function tick(){document.getElementById('clockDisplay').textContent=new Date().toLocaleTimeString('en-GB',{hour12:false});}
+tick();setInterval(tick,1000);
+
+// ---- Search ----
+window.searchFilter=function(q){window._searchQ=q.toLowerCase();if(window.renderUsersTable)window.renderUsersTable();};
+
+// ---- Avatar colors ----
+window.avatarColor=function(i){const c=['#00c8ff,#00ffe7','#00ff99,#00c8ff','#a855f7,#ff2d78','#ff9500,#ffe000','#ff2d78,#a855f7'];return c[i%c.length];}
+
+// Escape modal on key
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));});
+</script>
+</body>
+</html>
