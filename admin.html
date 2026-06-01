@@ -841,16 +841,9 @@ tbody td{padding:11px 14px;vertical-align:middle;}
 
 <!-- Firebase SDK -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, updateProfile }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, getDoc, onSnapshot, query, orderBy }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getDatabase, ref, onValue, set }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 // ============================================================
-// 🔧 REPLACE WITH YOUR FIREBASE CONFIG
+// 🔧 REPLACE WITH YOUR FIREBASE CONFIG (leave as-is for demo)
 // ============================================================
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
@@ -863,38 +856,137 @@ const firebaseConfig = {
 };
 // ============================================================
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const fs = getFirestore(app);
-const rtdb = getDatabase(app);
+const FIREBASE_READY = firebaseConfig.apiKey !== "YOUR_API_KEY";
+const _demo = JSON.parse(sessionStorage.getItem('elexys_demo') || 'null');
 
-// Auth guard — only admins
-onAuthStateChanged(auth, async user => {
-  if(!user){ window.location.href='login.html'; return; }
-  const snap = await getDoc(doc(fs,'users',user.uid));
-  if(!snap.exists() || snap.data().role !== 'admin'){
-    window.location.href='index.html'; return;
-  }
-  const name = user.displayName || user.email.split('@')[0];
-  document.getElementById('adminName').textContent = name;
-  document.getElementById('adminAvatar').textContent = name[0].toUpperCase();
-  loadUsers();
-  loadAnalytics();
-});
+// ── Shared helpers (work in both demo and real mode) ──
 
-window.logout = async () => { await signOut(auth); window.location.href='login.html'; };
-
-// Load Users
-async function loadUsers(){
-  const snap = await getDocs(collection(fs,'users'));
-  window._users = [];
-  snap.forEach(d=>window._users.push({id:d.id,...d.data()}));
+function loadDemoUsers(){
+  window._users = [
+    {id:'demo001',name:'Alice Kumar', email:'alice@lab.edu', board:'ESP32',       role:'student',createdAt:'2026-05-10'},
+    {id:'demo002',name:'Bob Singh',   email:'bob@lab.edu',   board:'ESP8266',     role:'student',createdAt:'2026-05-12'},
+    {id:'demo003',name:'Carol Patel', email:'carol@lab.edu', board:'Raspberry Pi',role:'student',createdAt:'2026-05-14'},
+    {id:'demo004',name:'David Rajan', email:'david@lab.edu', board:'Pi Pico',     role:'student',createdAt:'2026-05-16'},
+    {id:'demo005',name:'Eva Nair',    email:'eva@lab.edu',   board:'Arduino',     role:'student',createdAt:'2026-05-18'},
+    {id:'demo006',name:'Frank Das',   email:'frank@lab.edu', board:'ESP32',       role:'student',createdAt:'2026-05-20'},
+  ];
   document.getElementById('userCount').textContent = window._users.length;
   document.getElementById('stat-users').textContent = window._users.length;
   renderUsersTable();
   renderRecentUsers();
-  addSysLog(`Loaded ${window._users.length} student accounts`,'lo');
+  addSysLog('Demo mode — 6 sample students loaded','lo');
+  addSysLog('Firebase not connected — running offline','lw');
 }
+
+if (_demo && _demo.demo && _demo.role === 'admin') {
+  // ── Demo Admin ──
+  document.getElementById('adminName').textContent  = _demo.name;
+  document.getElementById('adminAvatar').textContent = _demo.name[0].toUpperCase();
+  loadDemoUsers();
+  loadAnalytics();
+
+  window.logout = function(){
+    sessionStorage.removeItem('elexys_demo');
+    window.location.href = 'login.html';
+  };
+
+  window.addUser = function(){
+    const name  = document.getElementById('m-name').value;
+    const email = document.getElementById('m-email').value;
+    const board = document.getElementById('m-board').value;
+    const role  = document.getElementById('m-role').value;
+    if(!name||!email){ showToast('Fill required fields'); return; }
+    const id = 'demo' + Date.now();
+    window._users.push({id, name, email, board, role, createdAt: new Date().toISOString().slice(0,10)});
+    document.getElementById('userCount').textContent = window._users.length;
+    document.getElementById('stat-users').textContent = window._users.length;
+    renderUsersTable(); renderRecentUsers();
+    closeModal('addUserModal');
+    showToast('✅ [Demo] Student added: ' + name);
+    addSysLog('Demo: student added — ' + name,'lo');
+  };
+
+  window.deleteUser = function(uid){
+    if(!confirm('Delete this student?')) return;
+    window._users = window._users.filter(u => u.id !== uid);
+    document.getElementById('userCount').textContent = window._users.length;
+    document.getElementById('stat-users').textContent = window._users.length;
+    renderUsersTable(); renderRecentUsers();
+    showToast('🗑 [Demo] Student removed');
+  };
+
+} else if (_demo && _demo.demo) {
+  // Demo student tried admin → redirect
+  window.location.href = 'index.html';
+
+} else if (FIREBASE_READY) {
+  // ── Real Firebase ──
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+  const { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, updateProfile }
+    = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+  const { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, getDoc }
+    = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const fs   = getFirestore(app);
+
+  onAuthStateChanged(auth, async user => {
+    if(!user){ window.location.href='login.html'; return; }
+    const snap = await getDoc(doc(fs,'users',user.uid));
+    if(!snap.exists() || snap.data().role !== 'admin'){ window.location.href='index.html'; return; }
+    const name = user.displayName || user.email.split('@')[0];
+    document.getElementById('adminName').textContent  = name;
+    document.getElementById('adminAvatar').textContent = name[0].toUpperCase();
+    loadFirebaseUsers();
+    loadAnalytics();
+  });
+
+  window.logout = async () => {
+    sessionStorage.removeItem('elexys_demo');
+    await signOut(auth);
+    window.location.href = 'login.html';
+  };
+
+  async function loadFirebaseUsers(){
+    const snap = await getDocs(collection(fs,'users'));
+    window._users = [];
+    snap.forEach(d => window._users.push({id:d.id,...d.data()}));
+    document.getElementById('userCount').textContent = window._users.length;
+    document.getElementById('stat-users').textContent = window._users.length;
+    renderUsersTable(); renderRecentUsers();
+    addSysLog(`Loaded ${window._users.length} student accounts`,'lo');
+  }
+
+  window.addUser = async function(){
+    const name=document.getElementById('m-name').value, email=document.getElementById('m-email').value,
+          pass=document.getElementById('m-pass').value, board=document.getElementById('m-board').value,
+          role=document.getElementById('m-role').value;
+    if(!name||!email||!pass){ showToast('Fill all required fields'); return; }
+    try{
+      const cred = await createUserWithEmailAndPassword(auth,email,pass);
+      await updateProfile(cred.user,{displayName:name});
+      await setDoc(doc(fs,'users',cred.user.uid),{name,email,board,role,createdAt:new Date().toISOString()});
+      closeModal('addUserModal');
+      showToast('✅ Student added: '+name);
+      addSysLog(`New student: ${name} (${email})`,'lo');
+      loadFirebaseUsers();
+    }catch(e){ showToast('Error: '+e.message); }
+  };
+
+  window.deleteUser = async function(uid){
+    if(!confirm('Delete this student?')) return;
+    await deleteDoc(doc(fs,'users',uid));
+    showToast('🗑 Student removed');
+    loadFirebaseUsers();
+  };
+
+} else {
+  // No demo session and no Firebase config — go to login
+  window.location.href = 'login.html';
+}
+
+window.viewUser = function(uid){ showToast('📋 User: '+uid.slice(0,12)+'...'); };
 
 window.renderUsersTable = function(){
   const board = document.getElementById('filterBoard')?.value||'';
@@ -943,33 +1035,6 @@ window.renderRecentUsers = function(){
       <td><button class="btn btn-ghost btn-sm" onclick="viewUser('${u.id}')">View</button></td>
     </tr>`).join('');
 };
-
-window.addUser = async function(){
-  const name=document.getElementById('m-name').value;
-  const email=document.getElementById('m-email').value;
-  const pass=document.getElementById('m-pass').value;
-  const board=document.getElementById('m-board').value;
-  const role=document.getElementById('m-role').value;
-  if(!name||!email||!pass){showToast('Fill all required fields'); return;}
-  try{
-    const cred=await createUserWithEmailAndPassword(auth,email,pass);
-    await updateProfile(cred.user,{displayName:name});
-    await setDoc(doc(fs,'users',cred.user.uid),{name,email,board,role,createdAt:new Date().toISOString()});
-    closeModal('addUserModal');
-    showToast('✅ Student added: '+name);
-    addSysLog(`New student created: ${name} (${email})`,'lo');
-    loadUsers();
-  }catch(e){ showToast('Error: '+e.message); }
-};
-
-window.deleteUser = async function(uid){
-  if(!confirm('Delete this student?')) return;
-  await deleteDoc(doc(fs,'users',uid));
-  showToast('🗑 Student removed');
-  loadUsers();
-};
-
-window.viewUser = function(uid){ showToast('📋 Viewing user: '+uid.slice(0,8)+'...'); };
 
 // Devices (mock + Firebase rtdb)
 window._devices = [

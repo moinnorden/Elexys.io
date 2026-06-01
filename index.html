@@ -727,13 +727,8 @@ def send_data(temp, hum):
 
 <!-- Firebase SDK -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
 // ============================================================
-// 🔧 REPLACE WITH YOUR FIREBASE CONFIG
+// 🔧 REPLACE WITH YOUR FIREBASE CONFIG (leave as-is for demo)
 // ============================================================
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
@@ -746,47 +741,72 @@ const firebaseConfig = {
 };
 // ============================================================
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-const fs = getFirestore(app);
+const FIREBASE_READY = firebaseConfig.apiKey !== "YOUR_API_KEY";
+const _demo = JSON.parse(sessionStorage.getItem('elexys_demo') || 'null');
 
-onAuthStateChanged(auth, async user => {
-  if(!user){ window.location.href='login.html'; return; }
-  const name = user.displayName || user.email.split('@')[0];
-  document.getElementById('sidebarName').textContent = name;
-  document.getElementById('sidebarAvatar').textContent = name[0].toUpperCase();
-  document.getElementById('apiToken').textContent = 'elx_' + user.uid.substring(0,28);
+if (_demo && _demo.demo) {
+  // ── Demo mode: no Firebase needed ──
+  document.getElementById('sidebarName').textContent = _demo.name;
+  document.getElementById('sidebarAvatar').textContent = _demo.name[0].toUpperCase();
+  document.getElementById('apiToken').textContent = 'elx_demo_' + _demo.uid.slice(-8).padEnd(24,'0');
+  const bp = document.getElementById('boardPicker');
+  if(bp){ const opts=[...bp.options]; const m=opts.find(o=>o.text.toLowerCase().includes((_demo.board||'').toLowerCase())); if(m) bp.value=m.value; }
 
-  // Listen to real-time sensor data
-  const snap = await getDoc(doc(fs,'users',user.uid));
-  const board = snap.exists() ? (snap.data().board||'ESP32') : 'ESP32';
+  window.logout = function(){
+    sessionStorage.removeItem('elexys_demo');
+    window.location.href='login.html';
+  };
+  window.sendCmd = function(cmd){
+    showToast('⚡ [Demo] Command: '+cmd);
+    addLog(cmd+' sent (demo mode)','ok');
+  };
 
-  const sensorRef = ref(db, `devices/${user.uid}/sensors`);
-  onValue(sensorRef, snapshot=>{
-    const d = snapshot.val();
-    if(!d) return;
-    if(d.temperature !== undefined) updateTemp(d.temperature);
-    if(d.humidity !== undefined) updateHum(d.humidity);
-    if(d.light !== undefined) updateLight(d.light);
-    if(d.motion !== undefined) updateMotion(d.motion);
-    if(d.pressure !== undefined) updatePressure(d.pressure);
-    if(d.rssi !== undefined) updateRssi(d.rssi);
+} else if (FIREBASE_READY) {
+  // ── Real Firebase ──
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+  const { getAuth, onAuthStateChanged, signOut } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+  const { getDatabase, ref, onValue, push } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+  const { getFirestore, doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getDatabase(app);
+  const fs   = getFirestore(app);
+
+  onAuthStateChanged(auth, async user => {
+    if(!user){ window.location.href='login.html'; return; }
+    const name = user.displayName || user.email.split('@')[0];
+    document.getElementById('sidebarName').textContent = name;
+    document.getElementById('sidebarAvatar').textContent = name[0].toUpperCase();
+    document.getElementById('apiToken').textContent = 'elx_' + user.uid.substring(0,28);
+    const snap = await getDoc(doc(fs,'users',user.uid));
+    const sensorRef = ref(db, `devices/${user.uid}/sensors`);
+    onValue(sensorRef, snapshot=>{
+      const d = snapshot.val(); if(!d) return;
+      if(d.temperature!==undefined) updateTemp(d.temperature);
+      if(d.humidity!==undefined)    updateHum(d.humidity);
+      if(d.light!==undefined)       updateLight(d.light);
+      if(d.motion!==undefined)      updateMotion(d.motion);
+      if(d.pressure!==undefined)    updatePressure(d.pressure);
+      if(d.rssi!==undefined)        updateRssi(d.rssi);
+    });
   });
-});
 
-window.logout = async function(){
-  await signOut(auth);
-  window.location.href='login.html';
-}
+  window.logout = async function(){
+    sessionStorage.removeItem('elexys_demo');
+    await signOut(auth);
+    window.location.href='login.html';
+  };
+  window.sendCmd = function(cmd){
+    const user = auth.currentUser; if(!user) return;
+    push(ref(db,`devices/${user.uid}/commands`),{cmd,ts:Date.now()});
+    showToast('⚡ Command sent: '+cmd);
+    addLog(cmd+' command sent to device','ok');
+  };
 
-window.sendCmd = function(cmd){
-  const auth2 = getAuth();
-  const user = auth2.currentUser;
-  if(!user) return;
-  push(ref(db,`devices/${user.uid}/commands`), {cmd, ts:Date.now()});
-  showToast('⚡ Command sent: '+cmd);
-  addLog(cmd+' command sent to device','ok');
+} else {
+  // ── No session, no Firebase config → back to login ──
+  window.location.href = 'login.html';
 }
 </script>
 

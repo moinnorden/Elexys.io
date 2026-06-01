@@ -337,14 +337,8 @@
 
 <!-- Firebase SDK -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-         GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, updateProfile
-       } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
 // ============================================================
-// 🔧 REPLACE WITH YOUR FIREBASE CONFIG
+// 🔧 REPLACE WITH YOUR FIREBASE CONFIG (leave as-is for demo)
 // ============================================================
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
@@ -356,87 +350,120 @@ const firebaseConfig = {
 };
 // ============================================================
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
+const FIREBASE_READY = firebaseConfig.apiKey !== "YOUR_API_KEY";
 
-let selectedBoard = 'ESP32';
+let auth, db, provider;
 
+if (FIREBASE_READY) {
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+  const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+          GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, updateProfile }
+    = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+  const { getFirestore, doc, setDoc, getDoc }
+    = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+  const app = initializeApp(firebaseConfig);
+  auth     = getAuth(app);
+  db       = getFirestore(app);
+  provider = new GoogleAuthProvider();
+
+  async function afterLogin(user, isNew=false, board='ESP32'){
+    if(isNew){
+      await setDoc(doc(db,'users',user.uid),{
+        name: user.displayName || document.getElementById('regName')?.value || '',
+        email: user.email, board, role:'student',
+        createdAt: new Date().toISOString()
+      });
+    }
+    const snap = await getDoc(doc(db,'users',user.uid));
+    window.location.href = (snap.exists() && snap.data().role==='admin') ? 'admin.html' : 'index.html';
+  }
+
+  window.emailLogin = async function(){
+    const email=document.getElementById('loginEmail').value;
+    const pass=document.getElementById('loginPass').value;
+    if(!email||!pass){showMsg('loginMsg','Fill all fields','err');return;}
+    document.getElementById('loginLoad').classList.add('show');
+    try{
+      const cred=await signInWithEmailAndPassword(auth,email,pass);
+      await afterLogin(cred.user);
+    }catch(e){
+      showMsg('loginMsg',e.message.replace('Firebase:','').trim(),'err');
+      document.getElementById('loginLoad').classList.remove('show');
+    }
+  };
+
+  window.emailRegister = async function(){
+    const name=document.getElementById('regName').value;
+    const email=document.getElementById('regEmail').value;
+    const pass=document.getElementById('regPass').value;
+    if(!name||!email||!pass){showMsg('regMsg','Fill all fields','err');return;}
+    if(pass.length<8){showMsg('regMsg','Password min 8 characters','err');return;}
+    document.getElementById('regLoad').classList.add('show');
+    try{
+      const cred=await createUserWithEmailAndPassword(auth,email,pass);
+      await updateProfile(cred.user,{displayName:name});
+      await afterLogin(cred.user,true,window._selectedBoard||'ESP32');
+    }catch(e){
+      showMsg('regMsg',e.message.replace('Firebase:','').trim(),'err');
+      document.getElementById('regLoad').classList.remove('show');
+    }
+  };
+
+  window.googleLogin = async function(){
+    try{
+      const cred=await signInWithPopup(auth,provider);
+      const snap=await getDoc(doc(db,'users',cred.user.uid));
+      await afterLogin(cred.user,!snap.exists(),window._selectedBoard||'ESP32');
+    }catch(e){
+      showMsg('loginMsg',e.message.replace('Firebase:','').trim(),'err');
+    }
+  };
+
+  window.forgotPass = async function(){
+    const email=document.getElementById('loginEmail').value;
+    if(!email){showMsg('loginMsg','Enter your email first','err');return;}
+    await sendPasswordResetEmail(auth,email);
+    showMsg('loginMsg','Reset link sent! Check your inbox','ok');
+  };
+
+} else {
+  // ── Demo / no-Firebase stubs ──
+  window.emailLogin = function(){
+    const email=document.getElementById('loginEmail').value;
+    const pass=document.getElementById('loginPass').value;
+    const DEMO={
+      'student@elexys.io':{ pass:'demo1234', role:'student', name:'Demo Student' },
+      'admin@elexys.io':  { pass:'admin1234', role:'admin',   name:'Demo Admin'   }
+    };
+    if(DEMO[email] && DEMO[email].pass===pass){
+      demoLogin(DEMO[email].role); return;
+    }
+    showMsg('loginMsg','Demo mode: use the ⚡ Demo buttons below','err');
+  };
+  window.emailRegister = function(){
+    showMsg('regMsg','Firebase not configured — use demo mode to test','err');
+  };
+  window.googleLogin = function(){
+    showMsg('loginMsg','Firebase not configured — use demo mode to test','err');
+  };
+  window.forgotPass = function(){
+    showMsg('loginMsg','Firebase not configured — use demo mode to test','err');
+  };
+}
+
+window._selectedBoard = 'ESP32';
 window.selBoard = function(el){
   document.querySelectorAll('.board-chip').forEach(c=>c.classList.remove('sel'));
   el.classList.add('sel');
-  selectedBoard = el.textContent;
-}
+  window._selectedBoard = el.textContent;
+};
 
 function showMsg(id, text, type){
-  const el = document.getElementById(id);
-  el.textContent = text; el.className='msg '+type+' show';
+  const el=document.getElementById(id);
+  el.textContent=text; el.className='msg '+type+' show';
 }
-
-async function afterLogin(user, isNew=false, board='ESP32'){
-  if(isNew){
-    await setDoc(doc(db,'users',user.uid),{
-      name: user.displayName || document.getElementById('regName')?.value || '',
-      email: user.email, board: board, role:'student',
-      createdAt: new Date().toISOString()
-    });
-  }
-  const snap = await getDoc(doc(db,'users',user.uid));
-  if(snap.exists() && snap.data().role==='admin'){
-    window.location.href='admin.html';
-  } else {
-    window.location.href='index.html';
-  }
-}
-
-window.emailLogin = async function(){
-  const email=document.getElementById('loginEmail').value;
-  const pass=document.getElementById('loginPass').value;
-  if(!email||!pass){showMsg('loginMsg','Fill all fields','err');return;}
-  document.getElementById('loginLoad').classList.add('show');
-  try{
-    const cred = await signInWithEmailAndPassword(auth,email,pass);
-    await afterLogin(cred.user);
-  }catch(e){
-    showMsg('loginMsg', e.message.replace('Firebase:','').trim(), 'err');
-    document.getElementById('loginLoad').classList.remove('show');
-  }
-}
-
-window.emailRegister = async function(){
-  const name=document.getElementById('regName').value;
-  const email=document.getElementById('regEmail').value;
-  const pass=document.getElementById('regPass').value;
-  if(!name||!email||!pass){showMsg('regMsg','Fill all fields','err');return;}
-  if(pass.length<8){showMsg('regMsg','Password min 8 characters','err');return;}
-  document.getElementById('regLoad').classList.add('show');
-  try{
-    const cred=await createUserWithEmailAndPassword(auth,email,pass);
-    await updateProfile(cred.user,{displayName:name});
-    await afterLogin(cred.user,true,selectedBoard);
-  }catch(e){
-    showMsg('regMsg', e.message.replace('Firebase:','').trim(), 'err');
-    document.getElementById('regLoad').classList.remove('show');
-  }
-}
-
-window.googleLogin = async function(){
-  try{
-    const cred=await signInWithPopup(auth,provider);
-    const snap=await getDoc(doc(db,'users',cred.user.uid));
-    await afterLogin(cred.user, !snap.exists(), selectedBoard);
-  }catch(e){
-    showMsg('loginMsg', e.message.replace('Firebase:','').trim(),'err');
-  }
-}
-
-window.forgotPass = async function(){
-  const email=document.getElementById('loginEmail').value;
-  if(!email){showMsg('loginMsg','Enter your email first','err');return;}
-  await sendPasswordResetEmail(auth,email);
-  showMsg('loginMsg','Reset link sent! Check your inbox','ok');
-}
+window.showMsg = showMsg;
 </script>
 
 <script>
