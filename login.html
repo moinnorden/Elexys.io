@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Elexys.io — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=Rajdhani:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #020b18;
+    --bg2: #040f1f;
+    --panel: rgba(0,200,255,0.04);
+    --border: rgba(0,200,255,0.18);
+    --cyan: #00c8ff;
+    --cyan2: #00ffe7;
+    --green: #00ff99;
+    --text: #cce8f4;
+    --text2: #6a9bb5;
+    --danger: #ff3b6b;
+    --card: rgba(4,20,40,0.85);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); font-family:'Rajdhani',sans-serif; color:var(--text);
+    overflow:hidden; position:relative;
+  }
+
+  /* Animated Grid Background */
+  .grid-bg{
+    position:fixed; inset:0; z-index:0;
+    background-image:
+      linear-gradient(rgba(0,200,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,255,0.04) 1px, transparent 1px);
+    background-size:60px 60px;
+    animation: gridMove 20s linear infinite;
+  }
+  @keyframes gridMove{ from{background-position:0 0;} to{background-position:60px 60px;} }
+
+  /* Orb glows */
+  .orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0;}
+  .orb1{width:500px;height:500px;background:rgba(0,200,255,0.08);top:-100px;left:-150px;}
+  .orb2{width:400px;height:400px;background:rgba(0,255,153,0.06);bottom:-80px;right:-100px;}
+  .orb3{width:300px;height:300px;background:rgba(0,100,200,0.1);top:50%;right:10%;}
+
+  /* Floating particles */
+  .particles{position:fixed;inset:0;z-index:0;overflow:hidden;}
+  .particle{
+    position:absolute; width:2px; height:2px; border-radius:50%;
+    background:var(--cyan); opacity:0;
+    animation: float 8s infinite;
+  }
+  @keyframes float{
+    0%{opacity:0;transform:translateY(100vh) scale(0);}
+    10%{opacity:.8;}
+    90%{opacity:.3;}
+    100%{opacity:0;transform:translateY(-10vh) scale(1.5);}
+  }
+
+  /* Login Card */
+  .login-wrap{
+    position:relative;z-index:10;width:100%;max-width:440px;padding:20px;
+  }
+  .logo-area{text-align:center;margin-bottom:32px;}
+  .logo-icon{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:70px;height:70px;border-radius:16px;margin-bottom:12px;
+    background:linear-gradient(135deg,rgba(0,200,255,0.2),rgba(0,255,153,0.1));
+    border:1px solid var(--cyan);position:relative;
+    box-shadow: 0 0 30px rgba(0,200,255,0.3);
+  }
+  .logo-icon svg{width:36px;height:36px;}
+  .logo-pulse{
+    position:absolute;inset:-4px;border-radius:20px;
+    border:1px solid rgba(0,200,255,0.4);
+    animation:pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{transform:scale(1);opacity:.6;}50%{transform:scale(1.08);opacity:1;}}
+  .logo-name{
+    font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;
+    background:linear-gradient(90deg,var(--cyan),var(--cyan2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    letter-spacing:4px;
+  }
+  .logo-tag{font-size:12px;color:var(--text2);letter-spacing:3px;margin-top:4px;font-family:'Share Tech Mono',monospace;}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:20px;padding:36px;
+    backdrop-filter:blur(20px);
+    box-shadow:0 0 60px rgba(0,200,255,0.07), inset 0 1px 0 rgba(255,255,255,0.05);
+    position:relative;overflow:hidden;
+  }
+  .card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+  }
+
+  .tab-row{display:flex;gap:8px;margin-bottom:28px;}
+  .tab{
+    flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;
+    background:transparent;color:var(--text2);font-family:'Rajdhani',sans-serif;
+    font-size:14px;font-weight:600;letter-spacing:1px;cursor:pointer;
+    transition:.3s;text-transform:uppercase;
+  }
+  .tab.active{
+    background:rgba(0,200,255,0.12);border-color:var(--cyan);color:var(--cyan);
+    box-shadow:0 0 15px rgba(0,200,255,0.2);
+  }
+  .tab:hover:not(.active){border-color:rgba(0,200,255,0.3);color:var(--text);}
+
+  .section{display:none;}
+  .section.active{display:block;}
+
+  .field{margin-bottom:18px;}
+  .field label{
+    display:block;font-size:12px;font-weight:600;letter-spacing:2px;
+    color:var(--text2);margin-bottom:7px;text-transform:uppercase;
+    font-family:'Share Tech Mono',monospace;
+  }
+  .field input{
+    width:100%;padding:12px 16px;
+    background:rgba(0,200,255,0.04);
+    border:1px solid var(--border);border-radius:10px;
+    color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;
+    outline:none;transition:.3s;
+  }
+  .field input:focus{
+    border-color:var(--cyan);
+    box-shadow:0 0 0 3px rgba(0,200,255,0.1);
+    background:rgba(0,200,255,0.07);
+  }
+  .field input::placeholder{color:var(--text2);}
+
+  .forgot{
+    text-align:right;margin-top:-10px;margin-bottom:18px;
+    font-size:12px;color:var(--cyan);cursor:pointer;letter-spacing:1px;
+  }
+  .forgot:hover{text-decoration:underline;}
+
+  .btn-main{
+    width:100%;padding:14px;border:none;border-radius:10px;cursor:pointer;
+    font-family:'Orbitron',sans-serif;font-size:13px;font-weight:600;
+    letter-spacing:2px;text-transform:uppercase;
+    background:linear-gradient(135deg,var(--cyan),var(--cyan2));
+    color:#020b18;position:relative;overflow:hidden;
+    transition:.3s;box-shadow:0 0 25px rgba(0,200,255,0.4);
+  }
+  .btn-main:hover{transform:translateY(-1px);box-shadow:0 0 35px rgba(0,200,255,0.6);}
+  .btn-main:active{transform:translateY(0);}
+  .btn-main .shine{
+    position:absolute;top:0;left:-100%;width:100%;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);
+    animation:shine 3s infinite;
+  }
+  @keyframes shine{0%{left:-100%;}60%,100%{left:100%;}}
+
+  .divider{
+    display:flex;align-items:center;gap:12px;margin:20px 0;
+    color:var(--text2);font-size:12px;letter-spacing:2px;font-family:'Share Tech Mono',monospace;
+  }
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  .btn-google{
+    width:100%;padding:13px;border:1px solid var(--border);border-radius:10px;
+    background:rgba(255,255,255,0.03);color:var(--text);cursor:pointer;
+    font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    transition:.3s;letter-spacing:1px;
+  }
+  .btn-google:hover{border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.07);}
+  .btn-google img{width:20px;height:20px;}
+
+  .board-select{
+    display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;
+  }
+  .board-chip{
+    padding:6px 14px;border:1px solid var(--border);border-radius:20px;
+    font-size:12px;color:var(--text2);cursor:pointer;transition:.3s;
+    font-family:'Share Tech Mono',monospace;letter-spacing:1px;
+  }
+  .board-chip:hover,.board-chip.sel{border-color:var(--cyan);color:var(--cyan);background:rgba(0,200,255,0.08);}
+
+  .msg{
+    padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;
+    display:none;font-family:'Share Tech Mono',monospace;letter-spacing:.5px;
+  }
+  .msg.err{background:rgba(255,59,107,0.1);border:1px solid rgba(255,59,107,0.3);color:var(--danger);}
+  .msg.ok{background:rgba(0,255,153,0.08);border:1px solid rgba(0,255,153,0.3);color:var(--green);}
+  .msg.show{display:block;}
+
+  .loading{
+    display:none;width:18px;height:18px;border:2px solid rgba(2,11,24,0.4);
+    border-top-color:#020b18;border-radius:50%;animation:spin .7s linear infinite;
+    margin-left:8px;vertical-align:middle;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading.show{display:inline-block;}
+
+  .footer-note{text-align:center;margin-top:20px;font-size:12px;color:var(--text2);letter-spacing:1px;}
+  .footer-note a{color:var(--cyan);text-decoration:none;}
+
+  /* Scan line effect */
+  .scan{
+    position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+  }
+
+  /* Status bar */
+  .status-bar{
+    position:fixed;bottom:0;left:0;right:0;z-index:10;
+    padding:8px 24px;
+    background:rgba(2,11,24,0.9);
+    border-top:1px solid var(--border);
+    display:flex;align-items:center;gap:16px;
+    font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text2);
+    backdrop-filter:blur(10px);
+  }
+  .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.4;}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+<div class="scan"></div>
+<div class="particles" id="particles"></div>
+
+<div class="login-wrap">
+  <div class="logo-area">
+    <div class="logo-icon">
+      <div class="logo-pulse"></div>
+      <svg viewBox="0 0 36 36" fill="none">
+        <path d="M18 4L32 12V24L18 32L4 24V12L18 4Z" stroke="#00c8ff" stroke-width="1.5"/>
+        <path d="M18 4L18 32M4 12L32 24M32 12L4 24" stroke="#00c8ff" stroke-width=".7" opacity=".4"/>
+        <circle cx="18" cy="18" r="5" fill="rgba(0,200,255,0.2)" stroke="#00ffe7" stroke-width="1.5"/>
+        <circle cx="18" cy="18" r="2" fill="#00ffe7"/>
+      </svg>
+    </div>
+    <div class="logo-name">ELEXYS.IO</div>
+    <div class="logo-tag">// IOT CLOUD PLATFORM //</div>
+  </div>
+
+  <div class="card">
+    <div class="tab-row">
+      <button class="tab active" onclick="switchTab('login')">Sign In</button>
+      <button class="tab" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="section active" id="login">
+      <div class="msg" id="loginMsg"></div>
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" id="loginEmail" placeholder="user@example.com"/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="••••••••"/>
+      </div>
+      <div class="forgot" onclick="forgotPass()">Forgot password?</div>
+      <button class="btn-main" onclick="emailLogin()">
+        <span class="shine"></span>
+        Access Platform <span class="loading" id="loginLoad"></span>
+      </button>
+      <div class="divider">OR</div>
+      <button class="btn-google" onclick="googleLogin()">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="section" id="register">
+      <div class="msg" id="regMsg"></div>
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="regName" placeholder="Your name"/>
+      </div>
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" id="regEmail" placeholder="user@example.com"/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="regPass" placeholder="Min 8 characters"/>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;margin-bottom:10px;">Select Your Board</div>
+        <div class="board-select">
+          <div class="board-chip sel" onclick="selBoard(this)">ESP32</div>
+          <div class="board-chip" onclick="selBoard(this)">ESP8266</div>
+          <div class="board-chip" onclick="selBoard(this)">Raspberry Pi</div>
+          <div class="board-chip" onclick="selBoard(this)">Pi Pico</div>
+          <div class="board-chip" onclick="selBoard(this)">Arduino</div>
+        </div>
+      </div>
+      <button class="btn-main" onclick="emailRegister()">
+        <span class="shine"></span>
+        Create Account <span class="loading" id="regLoad"></span>
+      </button>
+      <div class="divider">OR</div>
+      <button class="btn-google" onclick="googleLogin()">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+    </div>
+  </div>
+  <div class="footer-note">By signing in you agree to <a href="#">Terms</a> & <a href="#">Privacy Policy</a></div>
+</div>
+
+<div class="status-bar">
+  <div class="status-dot"></div>
+  <span>ELEXYS CLOUD ONLINE</span>
+  <span style="margin-left:auto;font-family:'Share Tech Mono',monospace;" id="clock"></span>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+         GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, updateProfile
+       } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ============================================================
+// 🔧 REPLACE WITH YOUR FIREBASE CONFIG
+// ============================================================
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+// ============================================================
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+let selectedBoard = 'ESP32';
+
+window.selBoard = function(el){
+  document.querySelectorAll('.board-chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedBoard = el.textContent;
+}
+
+function showMsg(id, text, type){
+  const el = document.getElementById(id);
+  el.textContent = text; el.className='msg '+type+' show';
+}
+
+async function afterLogin(user, isNew=false, board='ESP32'){
+  if(isNew){
+    await setDoc(doc(db,'users',user.uid),{
+      name: user.displayName || document.getElementById('regName')?.value || '',
+      email: user.email, board: board, role:'student',
+      createdAt: new Date().toISOString()
+    });
+  }
+  const snap = await getDoc(doc(db,'users',user.uid));
+  if(snap.exists() && snap.data().role==='admin'){
+    window.location.href='admin.html';
+  } else {
+    window.location.href='index.html';
+  }
+}
+
+window.emailLogin = async function(){
+  const email=document.getElementById('loginEmail').value;
+  const pass=document.getElementById('loginPass').value;
+  if(!email||!pass){showMsg('loginMsg','Fill all fields','err');return;}
+  document.getElementById('loginLoad').classList.add('show');
+  try{
+    const cred = await signInWithEmailAndPassword(auth,email,pass);
+    await afterLogin(cred.user);
+  }catch(e){
+    showMsg('loginMsg', e.message.replace('Firebase:','').trim(), 'err');
+    document.getElementById('loginLoad').classList.remove('show');
+  }
+}
+
+window.emailRegister = async function(){
+  const name=document.getElementById('regName').value;
+  const email=document.getElementById('regEmail').value;
+  const pass=document.getElementById('regPass').value;
+  if(!name||!email||!pass){showMsg('regMsg','Fill all fields','err');return;}
+  if(pass.length<8){showMsg('regMsg','Password min 8 characters','err');return;}
+  document.getElementById('regLoad').classList.add('show');
+  try{
+    const cred=await createUserWithEmailAndPassword(auth,email,pass);
+    await updateProfile(cred.user,{displayName:name});
+    await afterLogin(cred.user,true,selectedBoard);
+  }catch(e){
+    showMsg('regMsg', e.message.replace('Firebase:','').trim(), 'err');
+    document.getElementById('regLoad').classList.remove('show');
+  }
+}
+
+window.googleLogin = async function(){
+  try{
+    const cred=await signInWithPopup(auth,provider);
+    const snap=await getDoc(doc(db,'users',cred.user.uid));
+    await afterLogin(cred.user, !snap.exists(), selectedBoard);
+  }catch(e){
+    showMsg('loginMsg', e.message.replace('Firebase:','').trim(),'err');
+  }
+}
+
+window.forgotPass = async function(){
+  const email=document.getElementById('loginEmail').value;
+  if(!email){showMsg('loginMsg','Enter your email first','err');return;}
+  await sendPasswordResetEmail(auth,email);
+  showMsg('loginMsg','Reset link sent! Check your inbox','ok');
+}
+</script>
+
+<script>
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',i===(t==='login'?0:1)));
+  document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('active',i===(t==='login'?0:1)));
+}
+
+// Particles
+const pc=document.getElementById('particles');
+for(let i=0;i<35;i++){
+  const p=document.createElement('div');
+  p.className='particle';
+  p.style.cssText=`left:${Math.random()*100}%;animation-delay:${Math.random()*8}s;animation-duration:${6+Math.random()*6}s;opacity:${Math.random()*.7};`;
+  if(Math.random()>.5) p.style.background='#00ffe7';
+  pc.appendChild(p);
+}
+
+// Clock
+function tick(){
+  document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB',{hour12:false})+' UTC';
+}
+tick(); setInterval(tick,1000);
+</script>
+</body>
+</html>

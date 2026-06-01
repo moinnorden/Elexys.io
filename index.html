@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Elexys.io — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root[data-theme="dark"]{
+  --bg:#020b18;--bg2:#040f1f;--bg3:#061525;
+  --panel:rgba(0,200,255,0.04);--card:rgba(4,20,45,0.9);
+  --border:rgba(0,200,255,0.15);--border2:rgba(0,200,255,0.08);
+  --cyan:#00c8ff;--cyan2:#00ffe7;--green:#00ff99;--orange:#ff9500;
+  --pink:#ff2d78;--purple:#a855f7;--yellow:#ffe000;
+  --text:#cce8f4;--text2:#5a8aaa;--text3:#3a6080;
+  --shadow:rgba(0,200,255,0.15);
+  --sidebar:rgba(2,11,30,0.97);
+  --topbar:rgba(2,11,30,0.95);
+}
+:root[data-theme="light"]{
+  --bg:#f0f6ff;--bg2:#e4eef8;--bg3:#d8eaf7;
+  --panel:rgba(0,100,200,0.05);--card:rgba(255,255,255,0.95);
+  --border:rgba(0,120,200,0.2);--border2:rgba(0,120,200,0.1);
+  --cyan:#0080cc;--cyan2:#0060aa;--green:#00aa66;--orange:#cc7700;
+  --pink:#cc1155;--purple:#7c3aed;--yellow:#aa9000;
+  --text:#0a2540;--text2:#4a6080;--text3:#8aaccf;
+  --shadow:rgba(0,100,200,0.12);
+  --sidebar:rgba(245,250,255,0.98);
+  --topbar:rgba(240,246,255,0.97);
+}
+*{box-sizing:border-box;margin:0;padding:0;transition:background .3s,color .3s,border-color .3s;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden;}
+
+/* Animated BG (dark only) */
+[data-theme="dark"] .grid-bg{
+  position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(0,200,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,0.03) 1px,transparent 1px);
+  background-size:50px 50px;pointer-events:none;
+}
+[data-theme="light"] .grid-bg{display:none;}
+
+/* SIDEBAR */
+.sidebar{
+  width:240px;min-height:100vh;position:fixed;left:0;top:0;bottom:0;z-index:100;
+  background:var(--sidebar);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:0;
+  transition:transform .3s;
+}
+.sidebar-logo{
+  padding:24px 20px;border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;gap:12px;
+}
+.s-logo-icon{
+  width:40px;height:40px;border-radius:10px;
+  background:linear-gradient(135deg,rgba(0,200,255,0.2),rgba(0,255,153,0.1));
+  border:1px solid var(--cyan);display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 15px rgba(0,200,255,0.2);flex-shrink:0;
+}
+.s-logo-icon svg{width:22px;height:22px;}
+.s-logo-text{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;color:var(--cyan);letter-spacing:2px;}
+.s-logo-sub{font-size:9px;color:var(--text2);letter-spacing:2px;font-family:'Share Tech Mono',monospace;}
+
+.nav-section{padding:20px 12px 8px;flex:1;overflow-y:auto;}
+.nav-label{font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;padding:0 8px;margin-bottom:8px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  cursor:pointer;margin-bottom:2px;font-size:14px;font-weight:600;letter-spacing:.5px;
+  color:var(--text2);transition:.2s;border:1px solid transparent;
+}
+.nav-item:hover{background:var(--panel);color:var(--text);border-color:var(--border2);}
+.nav-item.active{background:rgba(0,200,255,0.1);color:var(--cyan);border-color:var(--border);}
+.nav-item svg{width:17px;height:17px;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--cyan);color:#020b18;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;font-family:'Share Tech Mono',monospace;}
+
+.sidebar-footer{padding:16px;border-top:1px solid var(--border2);}
+.user-card{
+  display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;
+  background:var(--panel);border:1px solid var(--border2);cursor:pointer;
+}
+.user-avatar{
+  width:34px;height:34px;border-radius:8px;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan2));
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#020b18;
+  flex-shrink:0;
+}
+.user-name{font-size:13px;font-weight:600;color:var(--text);}
+.user-role{font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;letter-spacing:1px;}
+
+/* TOPBAR */
+.topbar{
+  position:fixed;top:0;left:240px;right:0;height:64px;z-index:90;
+  background:var(--topbar);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 24px;gap:16px;
+  backdrop-filter:blur(12px);
+}
+.topbar-title{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:600;color:var(--cyan);letter-spacing:2px;flex:1;}
+.topbar-title span{color:var(--text2);font-weight:400;}
+
+.board-select-wrap{display:flex;align-items:center;gap:8px;}
+.board-label{font-size:11px;color:var(--text2);letter-spacing:1px;font-family:'Share Tech Mono',monospace;}
+select.board-picker{
+  background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  color:var(--cyan);padding:6px 12px;font-family:'Share Tech Mono',monospace;
+  font-size:12px;cursor:pointer;outline:none;
+}
+
+.btn-icon{
+  width:36px;height:36px;border-radius:8px;border:1px solid var(--border);
+  background:var(--panel);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text2);transition:.2s;
+}
+.btn-icon:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn-icon svg{width:18px;height:18px;}
+
+.conn-status{
+  display:flex;align-items:center;gap:6px;font-size:11px;
+  font-family:'Share Tech Mono',monospace;color:var(--green);
+}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* MAIN */
+.main{margin-left:240px;margin-top:64px;padding:24px;min-height:calc(100vh - 64px);position:relative;z-index:1;}
+
+/* Grid Layout */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+.section-title{
+  font-family:'Orbitron',sans-serif;font-size:12px;font-weight:600;
+  color:var(--text2);letter-spacing:3px;text-transform:uppercase;
+  margin-bottom:16px;margin-top:24px;display:flex;align-items:center;gap:10px;
+}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border2);}
+.section-title:first-child{margin-top:0;}
+
+/* Card */
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:20px;position:relative;overflow:hidden;
+  box-shadow:0 4px 24px rgba(0,0,0,.2),0 0 0 0 var(--shadow);
+  transition:box-shadow .3s;
+}
+.card:hover{box-shadow:0 4px 32px rgba(0,0,0,.25),0 0 20px var(--shadow);}
+.card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:.5;
+}
+
+/* Stat Cards */
+.stat-card{padding:18px 20px;}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+.stat-icon{
+  width:42px;height:42px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.stat-icon svg{width:22px;height:22px;}
+.stat-change{font-size:11px;font-family:'Share Tech Mono',monospace;padding:3px 8px;border-radius:10px;}
+.stat-change.up{background:rgba(0,255,153,.1);color:var(--green);}
+.stat-change.down{background:rgba(255,45,120,.1);color:var(--pink);}
+.stat-val{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;line-height:1;}
+.stat-label{font-size:12px;color:var(--text2);letter-spacing:1px;margin-top:4px;font-family:'Share Tech Mono',monospace;}
+.stat-bar{height:3px;border-radius:2px;margin-top:14px;background:var(--border2);overflow:hidden;}
+.stat-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--cyan2));transition:width .8s;}
+
+/* Chart Card */
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.chart-title{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:600;color:var(--cyan);letter-spacing:2px;}
+.chart-tabs{display:flex;gap:4px;}
+.ctab{
+  padding:4px 10px;border-radius:6px;font-size:11px;
+  border:1px solid var(--border2);background:transparent;color:var(--text2);
+  cursor:pointer;font-family:'Share Tech Mono',monospace;transition:.2s;
+}
+.ctab.active{background:rgba(0,200,255,.12);border-color:var(--cyan);color:var(--cyan);}
+.chart-wrap{position:relative;height:180px;}
+
+/* Gauge */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0;}
+.gauge-svg{width:160px;height:100px;}
+.gauge-val{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;text-align:center;margin-top:-10px;}
+.gauge-unit{font-size:11px;color:var(--text2);font-family:'Share Tech Mono',monospace;text-align:center;}
+.gauge-label{font-size:12px;color:var(--text2);letter-spacing:1px;margin-top:6px;}
+
+/* LED Widget */
+.led-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.led-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;border-radius:10px;
+  background:var(--panel);border:1px solid var(--border2);
+}
+.led-left{display:flex;align-items:center;gap:10px;}
+.led-bulb{
+  width:18px;height:18px;border-radius:50%;
+  background:#222;border:2px solid #333;
+  box-shadow:none;cursor:pointer;transition:.3s;flex-shrink:0;
+}
+.led-bulb.on{background:var(--green);border-color:var(--green);box-shadow:0 0 12px var(--green),0 0 4px var(--green);}
+.led-bulb.red.on{background:#ff3b6b;border-color:#ff3b6b;box-shadow:0 0 12px #ff3b6b;}
+.led-bulb.blue.on{background:#00c8ff;border-color:#00c8ff;box-shadow:0 0 12px #00c8ff;}
+.led-bulb.yellow.on{background:#ffe000;border-color:#ffe000;box-shadow:0 0 12px #ffe000;}
+.led-name{font-size:13px;font-weight:600;}
+
+/* Toggle */
+.toggle{position:relative;width:44px;height:24px;cursor:pointer;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{
+  position:absolute;inset:0;border-radius:12px;
+  background:var(--border2);border:1px solid var(--border);transition:.3s;
+}
+.toggle input:checked~.toggle-track{background:var(--cyan);border-color:var(--cyan);}
+.toggle-knob{
+  position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
+  background:var(--text2);transition:.3s;
+}
+.toggle input:checked~.toggle-knob{left:23px;background:#020b18;}
+
+/* Button Widget */
+.btn-widget{
+  width:100%;padding:14px;border-radius:12px;border:1px solid var(--cyan);
+  background:rgba(0,200,255,0.08);color:var(--cyan);
+  font-family:'Orbitron',sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;
+  cursor:pointer;transition:.2s;text-transform:uppercase;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-widget:hover{background:rgba(0,200,255,0.18);box-shadow:0 0 20px rgba(0,200,255,0.3);}
+.btn-widget:active{transform:scale(.97);}
+.btn-widget.danger{border-color:var(--pink);background:rgba(255,45,120,0.08);color:var(--pink);}
+.btn-widget.danger:hover{background:rgba(255,45,120,0.18);}
+.btn-widget.success{border-color:var(--green);background:rgba(0,255,153,0.08);color:var(--green);}
+.btn-widget.success:hover{background:rgba(0,255,153,0.18);}
+
+/* Slider Widget */
+.slider-wrap{margin-top:8px;}
+.slider-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.slider-name{font-size:13px;font-weight:600;}
+.slider-val{font-family:'Orbitron',sans-serif;font-size:14px;color:var(--cyan);}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;border-radius:2px;
+  background:var(--border2);outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--cyan);box-shadow:0 0 8px var(--cyan);cursor:pointer;
+}
+
+/* Terminal / Log */
+.terminal{
+  background:#000e1e;border:1px solid var(--border2);border-radius:10px;
+  padding:14px;font-family:'Share Tech Mono',monospace;font-size:12px;
+  height:180px;overflow-y:auto;scrollbar-width:thin;
+}
+.terminal::-webkit-scrollbar{width:4px;}
+.terminal::-webkit-scrollbar-thumb{background:var(--border);}
+.log-line{margin-bottom:4px;line-height:1.5;}
+.log-line .ts{color:var(--text3);}
+.log-line .info{color:var(--cyan);}
+.log-line .ok{color:var(--green);}
+.log-line .warn{color:var(--orange);}
+.log-line .err{color:var(--pink);}
+
+/* Map / Device Location placeholder */
+.map-mock{
+  height:200px;border-radius:10px;overflow:hidden;position:relative;
+  background:linear-gradient(135deg,#020b18,#041525);
+  border:1px solid var(--border2);
+}
+.map-mock svg{width:100%;height:100%;opacity:.3;}
+.map-pin{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:16px;height:16px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 20px var(--cyan);animation:mapPulse 2s infinite;
+}
+@keyframes mapPulse{0%{box-shadow:0 0 0 0 rgba(0,200,255,.6);}70%{box-shadow:0 0 0 15px rgba(0,200,255,0);}100%{box-shadow:0 0 0 0 rgba(0,200,255,0);}}
+.map-ring{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  border-radius:50%;border:1px solid rgba(0,200,255,.2);
+  animation:ringExpand 2s infinite;
+}
+@keyframes ringExpand{0%{width:20px;height:20px;opacity:.8;}100%{width:80px;height:80px;opacity:0;}}
+
+/* Device info card */
+.device-info{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.di-item{padding:10px 14px;background:var(--panel);border:1px solid var(--border2);border-radius:8px;}
+.di-label{font-size:10px;color:var(--text3);letter-spacing:2px;font-family:'Share Tech Mono',monospace;margin-bottom:4px;}
+.di-val{font-size:14px;font-weight:600;font-family:'Share Tech Mono',monospace;color:var(--cyan);}
+
+/* Notification toast */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  padding:12px 20px;border-radius:10px;
+  background:var(--card);border:1px solid var(--cyan);
+  font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--cyan);
+  box-shadow:0 0 30px rgba(0,200,255,.2);
+  transform:translateX(120%);transition:.4s;
+}
+.toast.show{transform:translateX(0);}
+
+/* Responsive */
+@media(max-width:1100px){.grid-4{grid-template-columns:1fr 1fr;}.grid-3{grid-template-columns:1fr 1fr;}}
+@media(max-width:780px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main,.topbar{margin-left:0;left:0;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="s-logo-icon">
+      <svg viewBox="0 0 36 36" fill="none">
+        <path d="M18 4L32 12V24L18 32L4 24V12L18 4Z" stroke="#00c8ff" stroke-width="1.5"/>
+        <circle cx="18" cy="18" r="5" fill="rgba(0,200,255,0.2)" stroke="#00ffe7" stroke-width="1.5"/>
+        <circle cx="18" cy="18" r="2" fill="#00ffe7"/>
+      </svg>
+    </div>
+    <div>
+      <div class="s-logo-text">ELEXYS</div>
+      <div class="s-logo-sub">IOT PLATFORM</div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Main</div>
+    <div class="nav-item active" onclick="navTo(this,'dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="navTo(this,'widgets')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+      Widgets
+    </div>
+    <div class="nav-item" onclick="navTo(this,'devices')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"/></svg>
+      Devices
+    </div>
+    <div class="nav-item" onclick="navTo(this,'analytics')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Analytics
+    </div>
+
+    <div class="nav-label" style="margin-top:16px;">Control</div>
+    <div class="nav-item" onclick="navTo(this,'gpio')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3"/></svg>
+      GPIO Control
+    </div>
+    <div class="nav-item" onclick="navTo(this,'logs')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Logs
+      <span class="nav-badge" id="logBadge">3</span>
+    </div>
+    <div class="nav-item" onclick="navTo(this,'alerts')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+      Alerts
+    </div>
+    <div class="nav-item" onclick="navTo(this,'settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Settings
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="sidebarAvatar">U</div>
+      <div>
+        <div class="user-name" id="sidebarName">Loading...</div>
+        <div class="user-role">STUDENT</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-title">ELEXYS.IO <span>/ Dashboard</span></div>
+
+  <div class="board-select-wrap">
+    <div class="board-label">BOARD:</div>
+    <select class="board-picker" id="boardPicker" onchange="changeBoard(this.value)">
+      <option value="esp32">ESP32</option>
+      <option value="esp8266">ESP8266</option>
+      <option value="rpi">Raspberry Pi</option>
+      <option value="pico">Pi Pico</option>
+      <option value="arduino">Arduino</option>
+    </select>
+  </div>
+
+  <div class="conn-status">
+    <div class="conn-dot"></div>
+    LIVE
+  </div>
+
+  <!-- Theme Toggle -->
+  <div class="btn-icon" onclick="toggleTheme()" title="Day/Night">
+    <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+    </svg>
+  </div>
+
+  <div class="btn-icon" onclick="logout()" title="Logout">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+  </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- STAT CARDS -->
+  <div class="section-title">Live Sensor Overview</div>
+  <div class="grid-4">
+    <div class="card stat-card">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:rgba(0,200,255,0.1);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00c8ff" stroke-width="1.8"><path d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"/></svg>
+        </div>
+        <span class="stat-change up" id="tempBadge">▲ 2.4%</span>
+      </div>
+      <div class="stat-val" id="tempVal">--</div>
+      <div class="stat-label">TEMPERATURE °C</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="tempBar" style="width:0%;background:linear-gradient(90deg,#00c8ff,#00ffe7)"></div></div>
+    </div>
+
+    <div class="card stat-card">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:rgba(0,255,153,0.1);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00ff99" stroke-width="1.8"><path d="M12 22a7 7 0 007-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 007 7z"/></svg>
+        </div>
+        <span class="stat-change up">▲ 1.1%</span>
+      </div>
+      <div class="stat-val" id="humVal">--</div>
+      <div class="stat-label">HUMIDITY %</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="humBar" style="width:0%;background:linear-gradient(90deg,#00ff99,#00c8ff)"></div></div>
+    </div>
+
+    <div class="card stat-card">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:rgba(255,149,0,0.1);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ff9500" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+        </div>
+        <span class="stat-change down">▼ 0.7%</span>
+      </div>
+      <div class="stat-val" id="lightVal">--</div>
+      <div class="stat-label">LIGHT (LUX)</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="lightBar" style="width:0%;background:linear-gradient(90deg,#ff9500,#ffe000)"></div></div>
+    </div>
+
+    <div class="card stat-card">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:rgba(168,85,247,0.1);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <span class="stat-change up">▲ LIVE</span>
+      </div>
+      <div class="stat-val" id="motionVal" style="font-size:18px;">NO MOTION</div>
+      <div class="stat-label">MOTION SENSOR</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="motionBar" style="width:0%;background:linear-gradient(90deg,#a855f7,#ff2d78)"></div></div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="section-title">Sensor History</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="chart-header">
+        <div class="chart-title">TEMPERATURE</div>
+        <div class="chart-tabs">
+          <button class="ctab active" onclick="setChartRange(this,'1h','temp')">1H</button>
+          <button class="ctab" onclick="setChartRange(this,'6h','temp')">6H</button>
+          <button class="ctab" onclick="setChartRange(this,'24h','temp')">24H</button>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="tempChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-header">
+        <div class="chart-title">HUMIDITY</div>
+        <div class="chart-tabs">
+          <button class="ctab active" onclick="setChartRange(this,'1h','hum')">1H</button>
+          <button class="ctab" onclick="setChartRange(this,'6h','hum')">6H</button>
+          <button class="ctab" onclick="setChartRange(this,'24h','hum')">24H</button>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="humChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- GAUGE + EXTRA SENSOR -->
+  <div class="section-title">Gauges & Sensors</div>
+  <div class="grid-3">
+    <div class="card">
+      <div class="chart-title" style="margin-bottom:12px;">PRESSURE</div>
+      <div class="gauge-wrap">
+        <svg class="gauge-svg" viewBox="0 0 160 100">
+          <path d="M 20 90 A 70 70 0 0 1 140 90" fill="none" stroke="rgba(0,200,255,0.12)" stroke-width="10" stroke-linecap="round"/>
+          <path id="pressureArc" d="M 20 90 A 70 70 0 0 1 140 90" fill="none" stroke="url(#gGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="110"/>
+          <defs>
+            <linearGradient id="gGrad" x1="0%" y1="0%" x2="100%">
+              <stop offset="0%" stop-color="#00c8ff"/>
+              <stop offset="100%" stop-color="#00ffe7"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="gauge-val" id="pressureVal">--</div>
+        <div class="gauge-unit">hPa</div>
+        <div class="gauge-label" style="color:var(--text2);font-size:11px;letter-spacing:1px;font-family:'Share Tech Mono',monospace;">PRESSURE</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chart-title" style="margin-bottom:12px;">CO₂ LEVEL</div>
+      <div class="chart-wrap" style="height:160px;"><canvas id="co2Chart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="chart-title" style="margin-bottom:12px;">SIGNAL STRENGTH</div>
+      <div class="gauge-wrap">
+        <svg class="gauge-svg" viewBox="0 0 160 100">
+          <path d="M 20 90 A 70 70 0 0 1 140 90" fill="none" stroke="rgba(0,255,153,0.12)" stroke-width="10" stroke-linecap="round"/>
+          <path id="rssiArc" d="M 20 90 A 70 70 0 0 1 140 90" fill="none" stroke="#00ff99" stroke-width="10" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="60"/>
+        </svg>
+        <div class="gauge-val" id="rssiVal" style="color:var(--green);">--</div>
+        <div class="gauge-unit">dBm RSSI</div>
+        <div class="gauge-label" style="color:var(--text2);font-size:11px;letter-spacing:1px;font-family:'Share Tech Mono',monospace;">WIFI SIGNAL</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LED + CONTROLS -->
+  <div class="section-title">GPIO Control</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="chart-header">
+        <div class="chart-title">LED INDICATORS</div>
+      </div>
+      <div class="led-grid">
+        <div class="led-item">
+          <div class="led-left">
+            <div class="led-bulb on" id="led1" onclick="toggleLED('led1','GPIO2')"></div>
+            <div>
+              <div class="led-name">GPIO 2</div>
+              <div style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;">STATUS LED</div>
+            </div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked onchange="toggleLED('led1','GPIO2')"><div class="toggle-track"></div><div class="toggle-knob"></div></label>
+        </div>
+        <div class="led-item">
+          <div class="led-left">
+            <div class="led-bulb red" id="led2" onclick="toggleLED('led2','GPIO4')"></div>
+            <div>
+              <div class="led-name">GPIO 4</div>
+              <div style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;">ALERT LED</div>
+            </div>
+          </div>
+          <label class="toggle"><input type="checkbox" onchange="toggleLED('led2','GPIO4')"><div class="toggle-track"></div><div class="toggle-knob"></div></label>
+        </div>
+        <div class="led-item">
+          <div class="led-left">
+            <div class="led-bulb blue on" id="led3" onclick="toggleLED('led3','GPIO5')"></div>
+            <div>
+              <div class="led-name">GPIO 5</div>
+              <div style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;">NETWORK LED</div>
+            </div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked onchange="toggleLED('led3','GPIO5')"><div class="toggle-track"></div><div class="toggle-knob"></div></label>
+        </div>
+        <div class="led-item">
+          <div class="led-left">
+            <div class="led-bulb yellow" id="led4" onclick="toggleLED('led4','GPIO18')"></div>
+            <div>
+              <div class="led-name">GPIO 18</div>
+              <div style="font-size:10px;color:var(--text2);font-family:'Share Tech Mono',monospace;">RELAY OUTPUT</div>
+            </div>
+          </div>
+          <label class="toggle"><input type="checkbox" onchange="toggleLED('led4','GPIO18')"><div class="toggle-track"></div><div class="toggle-knob"></div></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chart-title" style="margin-bottom:16px;">DEVICE CONTROLS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <button class="btn-widget" onclick="sendCmd('RESTART')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          Restart
+        </button>
+        <button class="btn-widget danger" onclick="sendCmd('DEEP_SLEEP')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          Deep Sleep
+        </button>
+        <button class="btn-widget success" onclick="sendCmd('READ_NOW')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Read Now
+        </button>
+        <button class="btn-widget" onclick="sendCmd('CALIBRATE')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06-.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Calibrate
+        </button>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-row">
+          <span class="slider-name">PWM Duty Cycle</span>
+          <span class="slider-val" id="pwmVal">50%</span>
+        </div>
+        <input type="range" min="0" max="100" value="50" oninput="updateSlider(this,'pwmVal','%','PWM')"/>
+      </div>
+      <div class="slider-wrap" style="margin-top:14px;">
+        <div class="slider-row">
+          <span class="slider-name">Sampling Rate</span>
+          <span class="slider-val" id="sampleVal">5s</span>
+        </div>
+        <input type="range" min="1" max="60" value="5" oninput="document.getElementById('sampleVal').textContent=this.value+'s'"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEVICE INFO + TERMINAL -->
+  <div class="section-title">Device Info & Serial Log</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="chart-title" style="margin-bottom:14px;">DEVICE DETAILS</div>
+      <div class="device-info">
+        <div class="di-item"><div class="di-label">BOARD</div><div class="di-val" id="di-board">ESP32</div></div>
+        <div class="di-item"><div class="di-label">IP ADDRESS</div><div class="di-val" id="di-ip">192.168.1.42</div></div>
+        <div class="di-item"><div class="di-label">FIRMWARE</div><div class="di-val">v2.4.1</div></div>
+        <div class="di-item"><div class="di-label">UPTIME</div><div class="di-val" id="di-uptime">0h 0m</div></div>
+        <div class="di-item"><div class="di-label">FREE HEAP</div><div class="di-val">182 KB</div></div>
+        <div class="di-item"><div class="di-label">CHIP ID</div><div class="di-val">EX-A3F2</div></div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="map-mock">
+          <svg viewBox="0 0 400 200"><circle cx="50" cy="50" r="30" fill="none" stroke="rgba(0,200,255,0.15)" stroke-width="1"/><circle cx="150" cy="100" r="50" fill="none" stroke="rgba(0,200,255,0.1)" stroke-width="1"/><circle cx="300" cy="60" r="40" fill="none" stroke="rgba(0,200,255,0.12)" stroke-width="1"/><line x1="0" y1="80" x2="400" y2="120" stroke="rgba(0,200,255,0.08)" stroke-width="1"/><line x1="0" y1="140" x2="400" y2="40" stroke="rgba(0,200,255,0.06)" stroke-width="1"/></svg>
+          <div class="map-pin"></div>
+          <div class="map-ring" style="animation-delay:.5s;"></div>
+          <div style="position:absolute;bottom:10px;left:12px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);">📍 Lat: 12.9716° N · Lon: 77.5946° E</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chart-header">
+        <div class="chart-title">SERIAL LOG</div>
+        <button class="btn-widget" style="width:auto;padding:6px 14px;font-size:10px;" onclick="clearLog()">CLEAR</button>
+      </div>
+      <div class="terminal" id="terminal"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <input id="cmdInput" type="text" placeholder="Enter command..." style="flex:1;padding:10px 14px;background:rgba(0,200,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:13px;outline:none;"/>
+        <button class="btn-widget" style="width:auto;padding:10px 18px;" onclick="sendCustomCmd()">SEND</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API SECTION -->
+  <div class="section-title">API Integration</div>
+  <div class="card">
+    <div class="chart-title" style="margin-bottom:16px;">DEVICE API TOKEN & CODE SAMPLES</div>
+    <div style="margin-bottom:14px;">
+      <div class="di-label" style="margin-bottom:8px;">YOUR API TOKEN</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <code style="flex:1;background:rgba(0,0,0,.3);padding:10px 14px;border-radius:8px;border:1px solid var(--border2);font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--cyan);word-break:break-all;" id="apiToken">elx_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code>
+        <button class="btn-widget" style="width:auto;padding:10px 14px;white-space:nowrap;" onclick="copyToken()">COPY</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div class="di-label" style="margin-bottom:8px;">ESP32 / ESP8266 (Arduino)</div>
+        <pre style="background:rgba(0,0,0,.4);padding:14px;border-radius:8px;border:1px solid var(--border2);font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--green);overflow-x:auto;white-space:pre-wrap;">#include &lt;HTTPClient.h&gt;
+#include &lt;ArduinoJson.h&gt;
+
+const char* TOKEN = "elx_YOUR_TOKEN";
+const char* URL =
+  "https://elexys.io/api/data";
+
+void sendData(float temp, float hum) {
+  HTTPClient http;
+  http.begin(URL);
+  http.addHeader("Authorization",
+    String("Bearer ") + TOKEN);
+  http.addHeader("Content-Type",
+    "application/json");
+
+  StaticJsonDocument&lt;200&gt; doc;
+  doc["temperature"] = temp;
+  doc["humidity"] = hum;
+  doc["board"] = "ESP32";
+
+  String body;
+  serializeJson(doc, body);
+  http.POST(body);
+  http.end();
+}</pre>
+      </div>
+      <div>
+        <div class="di-label" style="margin-bottom:8px;">Raspberry Pi (Python)</div>
+        <pre style="background:rgba(0,0,0,.4);padding:14px;border-radius:8px;border:1px solid var(--border2);font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--orange);overflow-x:auto;white-space:pre-wrap;">import requests, json
+
+TOKEN = "elx_YOUR_TOKEN"
+URL = "https://elexys.io/api/data"
+
+def send_data(temp, hum):
+    headers = {
+        "Authorization": f"Bearer {TOKEN}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "temperature": temp,
+        "humidity": hum,
+        "board": "RaspberryPi"
+    }
+    r = requests.post(URL,
+        headers=headers,
+        json=payload)
+    print(r.status_code)</pre>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ============================================================
+// 🔧 REPLACE WITH YOUR FIREBASE CONFIG
+// ============================================================
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+// ============================================================
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+const fs = getFirestore(app);
+
+onAuthStateChanged(auth, async user => {
+  if(!user){ window.location.href='login.html'; return; }
+  const name = user.displayName || user.email.split('@')[0];
+  document.getElementById('sidebarName').textContent = name;
+  document.getElementById('sidebarAvatar').textContent = name[0].toUpperCase();
+  document.getElementById('apiToken').textContent = 'elx_' + user.uid.substring(0,28);
+
+  // Listen to real-time sensor data
+  const snap = await getDoc(doc(fs,'users',user.uid));
+  const board = snap.exists() ? (snap.data().board||'ESP32') : 'ESP32';
+
+  const sensorRef = ref(db, `devices/${user.uid}/sensors`);
+  onValue(sensorRef, snapshot=>{
+    const d = snapshot.val();
+    if(!d) return;
+    if(d.temperature !== undefined) updateTemp(d.temperature);
+    if(d.humidity !== undefined) updateHum(d.humidity);
+    if(d.light !== undefined) updateLight(d.light);
+    if(d.motion !== undefined) updateMotion(d.motion);
+    if(d.pressure !== undefined) updatePressure(d.pressure);
+    if(d.rssi !== undefined) updateRssi(d.rssi);
+  });
+});
+
+window.logout = async function(){
+  await signOut(auth);
+  window.location.href='login.html';
+}
+
+window.sendCmd = function(cmd){
+  const auth2 = getAuth();
+  const user = auth2.currentUser;
+  if(!user) return;
+  push(ref(db,`devices/${user.uid}/commands`), {cmd, ts:Date.now()});
+  showToast('⚡ Command sent: '+cmd);
+  addLog(cmd+' command sent to device','ok');
+}
+</script>
+
+<script>
+// ---- Theme ----
+let isDark = true;
+function toggleTheme(){
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark?'dark':'light');
+  const icon = document.getElementById('themeIcon');
+  icon.innerHTML = isDark
+    ? '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>'
+    : '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  updateChartsTheme();
+}
+
+// ---- Charts ----
+const chartOpts = (label, color) => ({
+  responsive:true, maintainAspectRatio:false, animation:{duration:300},
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(2,11,24,.9)',borderColor:color,borderWidth:1,titleColor:color,bodyColor:'#cce8f4',titleFont:{family:'Share Tech Mono'},bodyFont:{family:'Share Tech Mono'}}},
+  scales:{
+    x:{grid:{color:'rgba(0,200,255,0.05)'},ticks:{color:'#5a8aaa',font:{family:'Share Tech Mono',size:10}},border:{display:false}},
+    y:{grid:{color:'rgba(0,200,255,0.05)'},ticks:{color:'#5a8aaa',font:{family:'Share Tech Mono',size:10}},border:{display:false}}
+  }
+});
+
+function makeDataset(color){
+  return {
+    data:[],
+    borderColor:color,
+    backgroundColor:'transparent',
+    borderWidth:2,
+    pointRadius:2,
+    pointBackgroundColor:color,
+    tension:.4,
+    fill:true,
+    backgroundColor:(ctx)=>{
+      const g=ctx.chart.ctx.createLinearGradient(0,0,0,180);
+      g.addColorStop(0,color+'40');g.addColorStop(1,color+'00');return g;
+    }
+  };
+}
+
+const labels=[];
+for(let i=29;i>=0;i--) labels.push(i===0?'Now':`${i*2}s`);
+
+const tempChart=new Chart(document.getElementById('tempChart'),{type:'line',data:{labels:[...labels],datasets:[makeDataset('#00c8ff')]},options:chartOpts('Temperature','#00c8ff')});
+const humChart=new Chart(document.getElementById('humChart'),{type:'line',data:{labels:[...labels],datasets:[makeDataset('#00ff99')]},options:chartOpts('Humidity','#00ff99')});
+const co2Chart=new Chart(document.getElementById('co2Chart'),{type:'bar',data:{labels:['1h','2h','3h','4h','5h','6h'],datasets:[{data:[412,428,440,435,451,447],backgroundColor:'rgba(168,85,247,0.5)',borderColor:'#a855f7',borderWidth:1,borderRadius:4}]},options:{...chartOpts('CO2','#a855f7'),scales:{...chartOpts('CO2','#a855f7').scales}}});
+
+function pushChartData(chart,val){
+  if(chart.data.datasets[0].data.length>29) chart.data.datasets[0].data.shift();
+  chart.data.datasets[0].data.push(val);
+  chart.update('none');
+}
+
+function updateTemp(v){
+  document.getElementById('tempVal').textContent=v.toFixed(1)+'°';
+  document.getElementById('tempBar').style.width=Math.min(v/50*100,100)+'%';
+  pushChartData(tempChart,v);
+}
+function updateHum(v){
+  document.getElementById('humVal').textContent=v.toFixed(0)+'%';
+  document.getElementById('humBar').style.width=v+'%';
+  pushChartData(humChart,v);
+}
+function updateLight(v){
+  document.getElementById('lightVal').textContent=v;
+  document.getElementById('lightBar').style.width=Math.min(v/1000*100,100)+'%';
+}
+function updateMotion(v){
+  const el=document.getElementById('motionVal');
+  el.textContent=v?'DETECTED':'NO MOTION';
+  el.style.color=v?'var(--pink)':'var(--text)';
+  document.getElementById('motionBar').style.width=v?100:0+'%';
+}
+function updatePressure(v){
+  document.getElementById('pressureVal').textContent=v;
+  const pct=(v-900)/200;
+  const offset=220-(pct*220);
+  document.getElementById('pressureArc').style.strokeDashoffset=Math.max(0,Math.min(220,offset));
+}
+function updateRssi(v){
+  document.getElementById('rssiVal').textContent=v;
+  const pct=(v+100)/70;
+  document.getElementById('rssiArc').style.strokeDashoffset=220-(pct*220);
+}
+
+// Simulate live data if no Firebase data
+setInterval(()=>{
+  const t=20+Math.random()*10;
+  const h=45+Math.random()*30;
+  const l=200+Math.random()*600;
+  updateTemp(t); updateHum(h); updateLight(Math.round(l));
+  updatePressure(Math.round(1010+Math.random()*15));
+  updateRssi(Math.round(-70+Math.random()*20));
+  updateMotion(Math.random()>.85);
+}, 2000);
+
+// ---- LED Toggle ----
+window.toggleLED = function(id,gpio){
+  const el=document.getElementById(id);
+  el.classList.toggle('on');
+  addLog(`${gpio} → ${el.classList.contains('on')?'HIGH':'LOW'}`,'ok');
+}
+
+// ---- Slider ----
+window.updateSlider = function(el,valId,unit,name){
+  document.getElementById(valId).textContent=el.value+unit;
+}
+
+// ---- Board Change ----
+window.changeBoard = function(b){
+  const names={esp32:'ESP32',esp8266:'ESP8266',rpi:'Raspberry Pi',pico:'Pi Pico',arduino:'Arduino'};
+  document.getElementById('di-board').textContent=names[b]||b;
+  addLog(`Board switched to ${names[b]}`,'info');
+  showToast('📡 Board: '+names[b]);
+}
+
+// ---- Terminal ----
+const log_msgs=[
+  {t:'OK',m:'WiFi connected — SSID: Elexys_Lab'},
+  {t:'INFO',m:'Firebase auth established'},
+  {t:'OK',m:'Sensor DHT22 initialized'},
+  {t:'WARN',m:'Light sensor LDR reading low'},
+  {t:'OK',m:'Sending data to Elexys cloud'},
+];
+log_msgs.forEach(l=>addLog(l.m,l.t.toLowerCase()));
+
+function addLog(msg,type='info'){
+  const term=document.getElementById('terminal');
+  const t=new Date().toLocaleTimeString('en-GB',{hour12:false});
+  const line=document.createElement('div');
+  line.className='log-line';
+  line.innerHTML=`<span class="ts">[${t}]</span> <span class="${type}">${msg}</span>`;
+  term.appendChild(line);
+  term.scrollTop=term.scrollHeight;
+  const b=document.getElementById('logBadge');
+  b.textContent=parseInt(b.textContent)+1;
+}
+window.clearLog=function(){document.getElementById('terminal').innerHTML='';document.getElementById('logBadge').textContent=0;}
+window.sendCustomCmd=function(){
+  const inp=document.getElementById('cmdInput');
+  if(!inp.value.trim()) return;
+  addLog('> '+inp.value,'warn');
+  inp.value='';
+}
+
+// ---- Toast ----
+window.showToast=function(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ---- Copy Token ----
+window.copyToken=function(){
+  navigator.clipboard.writeText(document.getElementById('apiToken').textContent);
+  showToast('🔑 Token copied!');
+}
+
+// ---- Nav ----
+window.navTo=function(el,page){
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ---- Uptime ----
+let secs=0;
+setInterval(()=>{
+  secs++;
+  const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60);
+  document.getElementById('di-uptime').textContent=`${h}h ${m}m`;
+},1000);
+
+function updateChartsTheme(){
+  [tempChart,humChart].forEach(c=>{
+    c.options.scales.x.grid.color='rgba(0,200,255,0.05)';
+    c.options.scales.y.grid.color='rgba(0,200,255,0.05)';
+    c.update();
+  });
+}
+
+// ---- Chart Range ----
+window.setChartRange=function(el,range,chart){
+  el.closest('.chart-tabs').querySelectorAll('.ctab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>
